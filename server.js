@@ -10,11 +10,12 @@ var socket = require("socket.io");
 
 var io = socket(server);
 
-// io.sockets.on("connection", newConnection);
+io.sockets.on("connection", newConnection);
 
-// function newConnection(socket)
-// {
-// 	console.log("New connection: " + socket.id);
+function newConnection(socket)
+{
+	console.log("New connection: " + socket.id);
+}
 
 // 	socket.on("msg", message);
 

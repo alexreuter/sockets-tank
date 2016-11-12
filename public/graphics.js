@@ -47,8 +47,8 @@ $(document).ready(function()
 	spriteSheet.onload = function() {
 		tank.onload = function()
 		{
-			// setInterval(draw,100); 
-			draw();
+			setInterval(draw,10); 
+			// draw();
 		}
 	};
 
@@ -59,11 +59,10 @@ $(document).ready(function()
 	var walls = [[0,2],[10,20]];
 	var wallCoords = [];
 	var wallindex = 0;
-	var tileDimens = [canvas.width/tank.width,canvas.height/tank.height];
 
 	var importSize = 40;
-	var tileWidth = canvas.width / tileDimens[0];
-	var tileHeight = canvas.height / tileDimens[1];
+	var tileWidth = canvas.width/(canvas.width/tank.width);
+	var tileHeight = canvas.height/(canvas.height/tank.height);
 
 
 // ************************** HELPER FUNCTIONS **************************************************************************
