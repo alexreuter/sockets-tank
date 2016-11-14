@@ -6,16 +6,16 @@ app.use(express.static('public'));
 var server = app.listen(3000);
 console.log("Server is working")
 
-var socket = require("socket.io");
+// var socket = require("socket.io");
 
-var io = socket(server);
+// var io = socket(server);
 
-io.sockets.on("connection", newConnection);
+// io.sockets.on("connection", newConnection);
 
-function newConnection(socket)
-{
-	console.log("New connection: " + socket.id);
-}
+// function newConnection(socket)
+// {
+// 	console.log("New connection: " + socket.id);
+// }
 
 // 	socket.on("msg", message);
 

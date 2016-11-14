@@ -1,4 +1,5 @@
-var socket = io.connect("http://localhost:3000");
+// For some reason this is the problem
+// var socket = io.connect("http://localhost:3000");
 
 /* 
 Extensions:
@@ -16,13 +17,14 @@ Then you dont let the corner come less that the x value if inside
 
 /*
 ToDo right now:
-Make bullets come out of turret
-
+Do wall collisions
+	- Use a circle and the distance formula
 
 */
 
 $(document).ready(function() 
 {
+	alert("loaded");
 	var canvas = document.getElementById("myCanvas")
 	var ctx = canvas.getContext("2d");
 	ctx.imageSmoothingEnabled = false;
@@ -43,12 +45,11 @@ $(document).ready(function()
 	var tank = new Image();
 	tank.src = "tank.png";
 
-	// This weird callback inside callback makes sure the images are loaded before the game startes
+	// This weird callback inside callback makes sure the images are loaded before the game starts
 	spriteSheet.onload = function() {
 		tank.onload = function()
 		{
 			setInterval(draw,10); 
-			// draw();
 		}
 	};
 
@@ -61,6 +62,8 @@ $(document).ready(function()
 	var wallindex = 0;
 
 	var importSize = 40;
+	// var tileWidth = canvas.width/(canvas.width/tank.width/tankscale);
+	// var tileHeight = canvas.height/(canvas.height/tank.height/tankscale);
 	var tileWidth = canvas.width/(canvas.width/tank.width);
 	var tileHeight = canvas.height/(canvas.height/tank.height);
 
@@ -214,39 +217,35 @@ $(document).ready(function()
 
 	function pointRect(bx,by,px,py)
 	{
-		if((px <= bx + tileWidth && px >= bx) && (py > by && py < by + tileHeight))
-		{
-			// Collision with block
-			//Tank is on left half of block
-			if(px < bx + (tileWidth/2))
-			{
-				tankx = bx;
-			}
-			// Tank is on right half of block
-			if(px > bx + (tileWidth/2))
-			{
-				tankx = bx + tileWidth;
-			}
-		}
+		// if((px <= bx + tileWidth && px >= bx) && (py > by && py < by + tileHeight))
+		// {
+		// 	// Collision with block
+		// 	//Tank is on left half of block
+		// 	if(px < bx + tileWidth)
+		// 	{
+		// 		tankx = bx;
+		// 	}
+		// 	// Tank is on right half of block
+		// 	if(px > bx + tileWidth)
+		// 	{
+		// 		tankx = bx + tileWidth;
+		// 	}
+		// }
+
+		ctx.beginPath();
+		ctx.fillStyle = "black";
+		ctx.arc(px,py,(tank.width),0,2*Math.PI);
+		ctx.fillStyle = "black";
+      	ctx.fill();
+		ctx.stroke();
+
+
+	}	
+
+	function distance(ax,ay,bx,by)
+	{
+		return Math.sqrt(Math.pow((ax-bx),2) + Math.pow((ay-by),2));
 	}
-
-	// function wallCollisions()
-	// {
-	// 	ctx.beginPath();
-	// 	ctx.fillStyle = "black";
-	// 	ctx.arc(tankx,tanky,(tank.width/3)*2,0,2*Math.PI);
- //    	ctx.fill();
-	// 	ctx.stroke();
-
-	// 	// This should only be done after tilemapping is done
-	// 	ctx.beginPath();
-	// 	ctx.fillStyle = "black";
-	// 	ctx.arc(walls[0][0],walls[0][1],(tank.width/3)*2,0,2*Math.PI);
- //    	ctx.fill();
-	// 	ctx.stroke();
-	// }
-
-	
 
 
 
@@ -269,8 +268,6 @@ $(document).ready(function()
 
 		// //Bounds of canvas
 		keepInsideCanvas();
-
-		// // pointRect();
 
 		ctx.translate(tankx,tanky);
 		ctx.rotate(-tankangle*Math.PI/180);
@@ -303,19 +300,13 @@ $(document).ready(function()
 			}
 		}
 
-		// pointRect(wallCoords[1][0], wallCoords[1][1], tankx, tanky);
-
-
-		// // wallCollisions();
-
-		
-
-		// // Wood panelling
-		// ctx.drawImage(spriteSheet,spriteSize*3,0,spriteSize,spriteSize,0,0,spriteSize,spriteSize);
+		// pointRect(wallCoords[0][0],wallCoords[0][1],tankx,tanky);
 
 		// socket.emit("box", data);
 
 	}
+
+	// console.log(wallCoords);
 
 
 });
