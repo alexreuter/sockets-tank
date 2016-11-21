@@ -18,7 +18,6 @@ Then you dont let the corner come less that the x value if inside
 /*
 ToDo right now:
 Do wall collisions
-	- Use a circle and the distance formula
 
 */
 
@@ -49,6 +48,9 @@ $(document).ready(function()
 	spriteSheet.onload = function() {
 		tank.onload = function()
 		{
+		// 	alert("imgs");
+		// 	draw();
+			// drawTiles();
 			setInterval(draw,10); 
 		}
 	};
@@ -62,10 +64,8 @@ $(document).ready(function()
 	var wallindex = 0;
 
 	var importSize = 40;
-	// var tileWidth = canvas.width/(canvas.width/tank.width/tankscale);
-	// var tileHeight = canvas.height/(canvas.height/tank.height/tankscale);
-	var tileWidth = canvas.width/(canvas.width/tank.width);
-	var tileHeight = canvas.height/(canvas.height/tank.height);
+	var tileWidth = canvas.width/(canvas.width/(tank.width*tankscale));
+	var tileHeight = canvas.height/(canvas.height/(tank.height*tankscale));
 
 
 // ************************** HELPER FUNCTIONS **************************************************************************
@@ -217,29 +217,20 @@ $(document).ready(function()
 
 	function pointRect(bx,by,px,py)
 	{
-		// if((px <= bx + tileWidth && px >= bx) && (py > by && py < by + tileHeight))
-		// {
-		// 	// Collision with block
-		// 	//Tank is on left half of block
-		// 	if(px < bx + tileWidth)
-		// 	{
-		// 		tankx = bx;
-		// 	}
-		// 	// Tank is on right half of block
-		// 	if(px > bx + tileWidth)
-		// 	{
-		// 		tankx = bx + tileWidth;
-		// 	}
-		// }
-
-		ctx.beginPath();
-		ctx.fillStyle = "black";
-		ctx.arc(px,py,(tank.width),0,2*Math.PI);
-		ctx.fillStyle = "black";
-      	ctx.fill();
-		ctx.stroke();
-
-
+		if((px <= bx + tileWidth && px+tank.width >= bx) && (py > by && py < by + tileHeight))
+		{
+			// Collision with block
+			//Tank is on left half of block
+			if(px+(tank.width) < bx + tileWidth)
+			{
+				tankx = bx;
+			}
+			// Tank is on right half of block
+			if(px > bx + tileWidth)
+			{
+				tankx = bx + tileWidth;
+			}
+		}
 	}	
 
 	function distance(ax,ay,bx,by)
@@ -251,6 +242,7 @@ $(document).ready(function()
 
 	function draw()
 	{
+		// alert("run");
 		//Converts from degrees to radians
 		var radians = (tankangle*Math.PI)/180;
 
@@ -300,7 +292,7 @@ $(document).ready(function()
 			}
 		}
 
-		// pointRect(wallCoords[0][0],wallCoords[0][1],tankx,tanky);
+		pointRect(wallCoords[0][0],wallCoords[0][1],tankx,tanky);
 
 		// socket.emit("box", data);
 
