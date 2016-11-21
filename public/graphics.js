@@ -1,5 +1,5 @@
 // For some reason this is the problem
-// var socket = io.connect("http://localhost:3000");
+var socket = io.connect("http://localhost:3000");
 
 /* 
 Extensions:
@@ -18,6 +18,7 @@ Then you dont let the corner come less that the x value if inside
 /*
 ToDo right now:
 Do wall collisions
+GET RID OF TILE WIDTH AND TANK WIDTH SINCE THEY ARE THE SAME
 
 */
 
@@ -190,16 +191,16 @@ $(document).ready(function()
   		{
   			tankangle = tankangle + turnspeed;
   		}
-	});
 
-	$(window).keydown(function(event)
-	{
-		if(event.keyCode == 38)
+  		
+
+  		if(event.keyCode == 38)
   		{
   			tankspeed = 2;
   		}
 
 	});
+
 
 	$(window).keyup(function(event)
 	{
@@ -217,20 +218,26 @@ $(document).ready(function()
 
 	function pointRect(bx,by,px,py)
 	{
-		if((px <= bx + tileWidth && px+tank.width >= bx) && (py > by && py < by + tileHeight))
+		// bx and by are coords of box	
+
+
+		if((px + tank.width >= bx && px - tank.width/2 <= bx+tileWidth + tank.width) && (py > by && py < by + tileHeight))
 		{
+			
 			// Collision with block
 			//Tank is on left half of block
-			if(px+(tank.width) < bx + tileWidth)
+			if(px + tank.width < bx + tileWidth)
 			{
-				tankx = bx;
+				tankx = bx-tileWidth/2;
 			}
+
 			// Tank is on right half of block
-			if(px > bx + tileWidth)
+			if(px - tank.width < bx + tileWidth)
 			{
-				tankx = bx + tileWidth;
+				tankx = bx + tileWidth + tank.width;
 			}
 		}
+
 	}	
 
 	function distance(ax,ay,bx,by)
