@@ -32,7 +32,7 @@ $(document).ready(function()
 	canvas.width = (window.innerWidth*0.99);
 	canvas.height = (window.innerHeight*0.97);
 
-	var tankangle = 0;
+	var tankangle = 180;
 	var tankspeed = 0;
 	var turnspeed = 10;
 	var xspeed = 0;
@@ -49,9 +49,6 @@ $(document).ready(function()
 	spriteSheet.onload = function() {
 		tank.onload = function()
 		{
-		// 	alert("imgs");
-		// 	draw();
-			// drawTiles();
 			setInterval(draw,10); 
 		}
 	};
@@ -60,7 +57,7 @@ $(document).ready(function()
 	var bulletsize = 5;
 	var bullets = [];
 
-	var walls = [[0,2],[10,20]];
+	var walls = [[0,2],[7,20]];
 	var wallCoords = [];
 	var wallindex = 0;
 
@@ -221,21 +218,30 @@ $(document).ready(function()
 		// bx and by are coords of box	
 
 
-		if((px + tank.width >= bx && px - tank.width/2 <= bx+tileWidth + tank.width) && (py > by && py < by + tileHeight))
+		ctx.fillStyle = "orange";
+		ctx.fillRect(px-tank.width,py,1,1);
+		// ctx.fillRect(bx + tileWidth, by,10,10);
+		// ctx.fillRect(px,by+tileWidth,1,1);
+
+		if((px + tank.width >= bx && px - tank.width <= bx+tileWidth) && (py + tank.height >= by && py - tank.height <= by + tileWidth))
 		{
 			
 			// Collision with block
 			//Tank is on left half of block
-			if(px + tank.width < bx + tileWidth)
+			if(px + tank.width <= bx + tileWidth/2)
 			{
-				tankx = bx-tileWidth/2;
+				console.log("Left");
+				tankx = bx - tank.width;
 			}
 
 			// Tank is on right half of block
-			if(px - tank.width < bx + tileWidth)
+			if(px - tank.width >= bx + tileWidth/2)
 			{
+				console.log("Right");
 				tankx = bx + tileWidth + tank.width;
 			}
+
+			// console.log("Inside");
 		}
 
 	}	
@@ -299,7 +305,7 @@ $(document).ready(function()
 			}
 		}
 
-		pointRect(wallCoords[0][0],wallCoords[0][1],tankx,tanky);
+		pointRect(wallCoords[1][0],wallCoords[1][1],tankx,tanky);
 
 		// socket.emit("box", data);
 
