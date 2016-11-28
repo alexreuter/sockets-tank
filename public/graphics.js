@@ -1,5 +1,5 @@
 // For some reason this is the problem
-var socket = io.connect("http://localhost:3000");
+// var socket = io.connect("http://localhost:3000");
 
 /* 
 Extensions:
@@ -24,6 +24,7 @@ GET RID OF TILE WIDTH AND TANK WIDTH SINCE THEY ARE THE SAME
 
 $(document).ready(function() 
 {
+	// var socket = io.connect("http://localhost:3000");
 	alert("loaded");
 	var canvas = document.getElementById("myCanvas")
 	var ctx = canvas.getContext("2d");
@@ -45,14 +46,6 @@ $(document).ready(function()
 	var tank = new Image();
 	tank.src = "tank.png";
 
-	// This weird callback inside callback makes sure the images are loaded before the game starts
-	spriteSheet.onload = function() {
-		tank.onload = function()
-		{
-			setInterval(draw,10); 
-		}
-	};
-
 	var bulletspeed = 5;
 	var bulletsize = 5;
 	var bullets = [];
@@ -60,10 +53,38 @@ $(document).ready(function()
 	var walls = [[0,2],[7,20]];
 	var wallCoords = [];
 	var wallindex = 0;
+	var windowDimens = [30,30*canvas.height/canvas.width];
 
 	var importSize = 40;
-	var tileWidth = canvas.width/(canvas.width/(tank.width*tankscale));
-	var tileHeight = canvas.height/(canvas.height/(tank.height*tankscale));
+
+	//Initial tanx and tanky
+	var tankx = canvas.width/2;
+	var tanky = canvas.height/2;
+
+	var tileWidth;
+	var tileHeight;
+
+	// This weird callback inside callback makes sure the images are loaded before the game starts
+	spriteSheet.onload = function() {
+		tank.onload = function()
+		{
+			tileWidth = canvas.width/(windowDimens[0]);
+			tileHeight = canvas.height/(windowDimens[1]);
+			alert("tileWidth = " + tileWidth);
+			alert("tankwidth" + tank.width)
+			setInterval(draw,10); 
+			// setInterval(debug,10);
+			// alert("locatz" + tank.width); 
+			// debug();
+
+		}
+	};
+
+
+	// WHEN I MESSED WITH TILEWIDTH AND STUFF IT MESSED UP THE DRAWING OF THE TILES
+
+	// var tileWidth = canvas.width/(canvas.width/(tank.width*tankscale));
+	
 
 
 // ************************** HELPER FUNCTIONS **************************************************************************
@@ -97,8 +118,10 @@ $(document).ready(function()
 
 		for(row = 0; row < canvas.height; row += tileHeight)
 		{
-			for(col = 0; col < canvas.width; col+= tileWidth)
+			// col is the actual coordinates
+			for(col = 0; col < canvas.width; col += tileWidth)
 			{
+
 				if(walls[wallindex][1] == col/tileWidth && walls[wallindex][0] == row/tileHeight)
 				{
 					// console.log(wallindex
@@ -113,6 +136,7 @@ $(document).ready(function()
 					{
 						wallindex ++;
 					}
+
 					
 				}
 				else
@@ -208,40 +232,41 @@ $(document).ready(function()
 
 	});
 
-	//Initial tanx and tanky
-	var tankx = canvas.width/2;
-	var tanky = canvas.height/2;
-
-
 	function pointRect(bx,by,px,py)
 	{
 		// bx and by are coords of box	
+		// This don't work
+		// Need to combine distance with moving out of the way
 
 
 		ctx.fillStyle = "orange";
-		ctx.fillRect(px-tank.width,py,1,1);
-		// ctx.fillRect(bx + tileWidth, by,10,10);
-		// ctx.fillRect(px,by+tileWidth,1,1);
+		ctx.fillRect(bx+tileWidth,by+tileHeight,10,10);
 
-		if((px + tank.width >= bx && px - tank.width <= bx+tileWidth) && (py + tank.height >= by && py - tank.height <= by + tileWidth))
+		if(distance(px,py,bx+tileWidth/2,by+tileHeight/2) < tank.width + tileWidth/2)
 		{
-			
-			// Collision with block
-			//Tank is on left half of block
+			console.log("INSIDE");
 			if(px + tank.width <= bx + tileWidth/2)
 			{
 				console.log("Left");
 				tankx = bx - tank.width;
 			}
-
-			// Tank is on right half of block
-			if(px - tank.width >= bx + tileWidth/2)
+			else if(px - tank.width > bx + tileWidth/2)
 			{
 				console.log("Right");
 				tankx = bx + tileWidth + tank.width;
 			}
+			// Tank is on top
+			else if(py - tank.width < by + tileWidth/2)
+			{
+				console.log("Top");
+				tanky = by - tank.width;
+			}
+			else if(py + tank.width >= by + tileWidth/2)
+			{
+				console.log("Bottom");
+				tanky = by + tileWidth + tank.width;
+			}
 
-			// console.log("Inside");
 		}
 
 	}	
@@ -255,7 +280,6 @@ $(document).ready(function()
 
 	function draw()
 	{
-		// alert("run");
 		//Converts from degrees to radians
 		var radians = (tankangle*Math.PI)/180;
 
@@ -269,10 +293,13 @@ $(document).ready(function()
 
 		// //Resets the background canvas from what was drawn previously
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
 		drawTiles();
 
-		// //Bounds of canvas
+
+		//Bounds of canvas
 		keepInsideCanvas();
+
 
 		ctx.translate(tankx,tanky);
 		ctx.rotate(-tankangle*Math.PI/180);
@@ -305,11 +332,20 @@ $(document).ready(function()
 			}
 		}
 
+
+		// FIX THIS
 		pointRect(wallCoords[1][0],wallCoords[1][1],tankx,tanky);
 
 		// socket.emit("box", data);
 
 	}
+
+	function debug()
+	{
+		drawTiles();
+		// pointRect(wallCoords[1][0],wallCoords[1][1],tankx,tanky);
+	}
+
 
 	// console.log(wallCoords);
 
