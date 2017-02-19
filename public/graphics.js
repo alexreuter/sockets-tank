@@ -16,100 +16,151 @@ Then you dont let the corner come less that the x value if inside
 
 
 /*
-ToDo right now:
-Do wall collisions
-GET RID OF TILE WIDTH AND TANK WIDTH SINCE THEY ARE THE SAME
+Long term:
+ -> Make tank an object
+ -> Bullet collisions
+*/
+
+/*
+Make tank speed have friction 
 
 */
+
+/*
+Need to re-write drawing out the board
+Need to re-orgainize code
+Need to make a setup function
+Figure out how to put into spereate files
+*/
+
+
+
+
+/*
+Networking Brainstorm
+
+ -> How does dying work? You always check if you are dying, 
+ if you do you drop out of the room, no problem reduces unnecessary computation if everyone has to
+
+ -> NOT NESSECARY FOR MVP Need to send nicknames over the airwaves, tank data also needs health numbers associated with it
+   -> Later on will be used to display nicknames and leaderboards and chat and other random stuff
+   -> Can just send tank data with health and can function as a game, just cant tell who was killed
+
+ On receiving a tank packet, just adds it to a multidimensional of tankdata that is displayed
+ Bullet data has its own class
+
+What if each person calculates their own bullets, sends them out, so that everyone else just displays the computed values
+How it worked this summer: startbullet packet, each person calculates and displays, now just need to display ball in the right place
+So when one person dies, their bullets are lost too -> Can be fixed later
+
+
+
+
+
+*/
+
+/*TODO
+ - Fix tank display back to normal
+ - Write code to display other tanks
+ - Look at tile drawing code again
+
+ */
+
+/*
+Minor fixes just came up with
+ - Can only fire once per space press
+
+
+*/
+
 
 $(document).ready(function() 
 {
 	// var socket = io.connect("http://localhost:3000");
-	alert("loaded");
-	var canvas = document.getElementById("myCanvas")
+	var canvas = document.getElementById("myCanvas");
 	var ctx = canvas.getContext("2d");
 	ctx.imageSmoothingEnabled = false;
 
 	canvas.width = (window.innerWidth*0.99);
 	canvas.height = (window.innerHeight*0.97);
 
-	var tankangle = 180;
-	var tankspeed = 0;
-	var turnspeed = 10;
-	var xspeed = 0;
-	var yspeed = 0;
-	var tankscale = 2;
+	var turnspeed = 15;
 
 	var spriteSheet = new Image();
 	spriteSheet.src = "level.png";
 	//Tank icon loading
-	var tank = new Image();
-	tank.src = "tank.png";
+	var tankImg = new Image();
+	tankImg.src = "tank.png";
 
-	var bulletspeed = 5;
-	var bulletsize = 5;
 	var bullets = [];
 
-	var walls = [[0,2],[7,20]];
+	var walls = [[5,3]];
 	var wallCoords = [];
 	var wallindex = 0;
 	var windowDimens = [30,30*canvas.height/canvas.width];
 
+	// var tankscale = 2;
+	var tankscale = (canvas.width/windowDimens[0])/tankImg.width;
+	var bulletsize, bulletspeed;
 	var importSize = 40;
 
-	//Initial tanx and tanky
-	var tankx = canvas.width/2;
-	var tanky = canvas.height/2;
+	// Will hold x,y,angle,health,nickname, color
+	var otherTanks = [];
+
+
 
 	var tileWidth;
 	var tileHeight;
 
+	var maxTankSpeed;
+
+	var rightDown = false;
+	var leftDown = false;
+	var reloaded = true;
+
 	// This weird callback inside callback makes sure the images are loaded before the game starts
 	spriteSheet.onload = function() {
-		tank.onload = function()
+		tankImg.onload = function()
 		{
+
 			tileWidth = canvas.width/(windowDimens[0]);
 			tileHeight = canvas.height/(windowDimens[1]);
-			alert("tileWidth = " + tileWidth);
-			alert("tankwidth" + tank.width)
-			setInterval(draw,10); 
-			// setInterval(debug,10);
-			// alert("locatz" + tank.width); 
-			// debug();
 
+			// Variables set relative to base unit of the tileWidth
+			maxTankSpeed = tileWidth/5;
+			bulletspeed = maxTankSpeed * 2;
+			bulletsize = tileWidth/15;
+
+			// setInterval(draw,50);
+			setInterval(draw,50);
 		}
 	};
-
-
-	// WHEN I MESSED WITH TILEWIDTH AND STUFF IT MESSED UP THE DRAWING OF THE TILES
-
-	// var tileWidth = canvas.width/(canvas.width/(tank.width*tankscale));
 	
 
 
 // ************************** HELPER FUNCTIONS **************************************************************************
-	function keepInsideCanvas()
-	{
-		if(tankx - (tank.width/2) < 0)
-		{
-			tankx = tank.width/2;
-		}
+	// function keepInsideCanvas()
+	// {
+	// 	if(tankx - (tank.width/2) < 0)
+	// 	{
+	// 		tankx = tank.width/2;
+	// 	}
 
-		if(tankx + (tank.width/2) > canvas.width)
-		{
-			tankx = canvas.width - (tank.width/2);
-		}
+	// 	if(tankx + (tank.width/2) > canvas.width)
+	// 	{
+	// 		tankx = canvas.width - (tank.width/2);
+	// 	}
 
-		if(tanky - (tank.height/2) < 0)
-		{
-			tanky = tank.height/2;
-		}
+	// 	if(tanky - (tank.height/2) < 0)
+	// 	{
+	// 		tanky = tank.height/2;
+	// 	}
 
-		if(tanky + (tank.height/2) > canvas.height)
-		{
-			tanky = canvas.height - (tank.height/2);
-		}
-	}
+	// 	if(tanky + (tank.height/2) > canvas.height)
+	// 	{
+	// 		tanky = canvas.height - (tank.height/2);
+	// 	}
+	// }
 
 
 	function drawTiles()
@@ -124,7 +175,6 @@ $(document).ready(function()
 
 				if(walls[wallindex][1] == col/tileWidth && walls[wallindex][0] == row/tileHeight)
 				{
-					// console.log(wallindex
 					if(wallCoords.length < walls.length)
 					{
 						wallCoords.push([col,row]);
@@ -136,8 +186,6 @@ $(document).ready(function()
 					{
 						wallindex ++;
 					}
-
-					
 				}
 				else
 				{
@@ -148,76 +196,232 @@ $(document).ready(function()
 		}
 	}
 
+// OLD CODE
+	// function pointRect(bx,by,px,py)
+	// {
+
+	// 	if(distance(px,py,bx+tileWidth/2,by+tileHeight/2) < tank.width + tileWidth/2)
+	// 	{
+	// 		if(px + tank.width <= bx + tileWidth/2)
+	// 		{
+	// 			tankx = bx - tank.width;
+	// 		}
+	// 		else if(px - tank.width > bx + tileWidth/2)
+	// 		{
+	// 			tankx = bx + tileWidth + tank.width;
+	// 		}
+	// 		// Tank is on top
+	// 		else if(py - tank.width < by + tileWidth/2)
+	// 		{
+	// 			tanky = by - tank.width;
+	// 		}
+	// 		else if(py + tank.width >= by + tileWidth/2)
+	// 		{
+	// 			tanky = by + tileWidth + tank.width;
+	// 		}
+
+	// 	}
+	// }
+
+	function pointRect(boxx,boxy)
+	{
+		if(distance(tank.x,tank.y,boxx+tileWidth/2,boxy+tileHeight/2) < tankImg.width + tileWidth/2)
+		{
+
+			if(tank.x + tankImg.width <= boxx + tileWidth/2)
+			{
+				tank.x = boxx - tankImg.width;
+			}
+			else if(tank.x - tankImg.width > boxx + tileWidth/2)
+			{
+				tank.x = boxx + tileWidth + tankImg.width;
+			}
+			// Tank is on top
+			else if(tank.y - tankImg.width < boxy + tileWidth/2)
+			{
+				tank.y = boxy - tankImg.width;
+			}
+			else if(tank.y + tankImg.width >= boxy + tileWidth/2)
+			{
+				tank.y = boxy + tileWidth + tankImg.width;
+			}
+		}
+	}
+
+	function distance(ax,ay,bx,by)
+	{
+		return Math.sqrt(Math.pow((ax-bx),2) + Math.pow((ay-by),2));
+	}
+
 // ************************** END OF HELPER FUNCTIONS ******************************************************* 
 
 //  ************************** BULLET CLASS ******************************************************* 
 
-	var bullet = function(index)
+// [bullet 0]
+// Do i really need to use an id system or is there an easier way to do this?
+// I cannot just pop because if shoot at side then at top, side gets triggered but top deleted
+// NEED TO PLAY WITH INDEXOF MORE, DONT REALLY WANT TO WRITE OWN SEARCHING ALGO, OR HAVE OTHER ARRAY JUST WITH INDEXES AND MAPPED
+// EITHER WAY IS A PAIN, AM SUPRISED THAT THE CODE DIDNT BREAK EARLIER
+
+	function findBullet(currentValue)
 	{
-		this.x = tankx;
-		this.y = tanky;
-		this.index = index;
-		this.angle = tankangle;
+		// this is inputted in calling findIndex
+		if(this == currentValue.id)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+
+	var bullet = function(id)
+	{
+		this.x = tank.x;
+		this.y = tank.y;
+		this.id = id;
+		this.angle = tank.angle;
 		this.xspeed = -bulletspeed*Math.sin((this.angle*Math.PI)/180);
 		this.yspeed = -bulletspeed*Math.cos((this.angle*Math.PI)/180);
 
 		this.animate = function()
 		{
+			// THE PROBLEM IS THAT WHEN INITIALLY ASSIGN INDEX, NOW WHEN WE DELETE, INDEX IS WRONG
 			//Updates the bullet position
 			this.x = this.x + this.xspeed;
 			this.y = this.y + this.yspeed;
 
+			var index = bullets.findIndex(findBullet,this.id);
+
+
 			if(this.x - (bulletsize/2) < 0)
 			{
-				delete bullets[this.index];
+				bullets.splice(index,index + 1);
 			}
-
-			if(this.x + (bulletsize/2) > canvas.width)
+			else if(this.x + (bulletsize/2) > canvas.width)
 			{
-				delete bullets[this.index];
+				bullets.splice(index,index + 1);
 			}
-
-			if(this.y - (bulletsize/2) < 0)
+			else if(this.y - (bulletsize/2) < 0)
 			{
-				delete bullets[this.index];
+				bullets.splice(index,index + 1);
 			}
-
-			if(this.y + (bulletsize/2) > canvas.height)
+			else if(this.y + (bulletsize/2) > canvas.height)
 			{
-				delete bullets[this.index];
+				bullets.splice(index,index + 1);
+			}
+			else
+			{
+				// SO THE PROCESSING OCCURING INSIDE THE DRAWING ISNT NEGLIGABLE
+				// for(i=0;i<wallCoords.length;i++)
+				// {
+				// 	// alert("INSIDE");
+				// 	if(distance(this.x,this.y,wallCoords[i][0] + tileWidth/2, wallCoords[i][1] + tileHeight/2) < tileWidth/2)
+				// 	{
+				// 		bullets.splice(this.index,this.index + 1);
+				// 		// delete bullets[this.index];
+				// 		console.log("DELETED");
+				// 		console.log(bullets[0]);
+				// 	}
+				// }
 			}
 		}
 	}
 
+
+	// TankClass is just a nice wrapper for the functionality of the local tank
+	var tankClass = function(x,y,angle)
+	{
+		this.x = x;
+		this.y = y;
+		this.angle = angle;
+		this.speed = 0;
+		this.xspeed = -this.speed*Math.sin((this.angle*Math.PI)/180);
+		this.yspeed = -this.speed*Math.cos((this.angle*Math.PI)/180);
+
+		this.animate = function()
+		{
+			this.xspeed = -this.speed*Math.sin((this.angle*Math.PI)/180);
+			this.yspeed = -this.speed*Math.cos((this.angle*Math.PI)/180);
+
+			//Updates the tank's position
+			this.x = this.x + this.xspeed;
+			this.y = this.y + this.yspeed;	
+
+			// Wall collisions
+			if(this.x - (tankImg.width/2) < 0)
+			{
+				this.x = tankImg.width/2;
+			}
+
+			if(this.x + (tankImg.width/2) > canvas.width)
+			{
+				this.x = canvas.width - (tankImg.width/2);
+			}
+
+			if(this.y - (tankImg.height/2) < 0)
+			{
+				this.y = tankImg.height/2;
+			}
+
+			if(this.y + (tankImg.height/2) > canvas.height)
+			{
+				this.y = canvas.height - (tankImg.height/2);
+			}
+
+			ctx.translate(this.x,this.y);
+			ctx.rotate(-this.angle*Math.PI/180);
+			// This 0.5 is in here because the middle of the tank is 0,0
+			ctx.drawImage(tankImg,-((tankImg.width)*0.5)*tankscale,-((tankImg.height)*0.5)*tankscale,tankImg.width * tankscale, tankImg.height*tankscale);
+			ctx.rotate(this.angle*Math.PI/180);
+			ctx.translate(-this.x,-this.y);		
+		}
+	}
+
+
 //  ************************** END OF  BULLET CLASS *******************************************************
 
 
-	// //Keyboard input
+	var tank = new tankClass(canvas.width/2,canvas.height/10+25,0,0);
+
+//  ************************** START OF KEYBOARD INPUT ****************************************************
+
+
+// /+/+/+/ /+/+/+/ /+/+/+/ /+/+/+/ /+/+/+/ /+/+/+/ /+/+/+/ KEYEVENT UP DOES NOT REGISTER ON A QUICK SPACEBAR PRESS, NEED TO RETHINK HOW TO LIMIT FIRE RATE
+
 	$(window).keydown(function(event)
 	{
 		var keyCode = event.keyCode;
 
-  		if(keyCode == 39)
-  		{
-  			tankangle = tankangle - turnspeed;
-  		}
-
-  		//Space Bar
-  		if(keyCode == 32)
+		//Space Bar
+  		if(keyCode == 32 && reloaded)
   		{
   			bullets.push(new bullet(bullets.length));
+  			reloaded = false;
   		}
 
-  		if(keyCode == 37)
+  		if(keyCode == 39)
+  		// Right
   		{
-  			tankangle = tankangle + turnspeed;
+  			rightDown = true;
+  		}
+
+
+  		if(keyCode == 37)
+  		// Left 
+  		{
+  			leftDown = true;
   		}
 
   		
 
   		if(event.keyCode == 38)
+  		// Up Arrow
   		{
-  			tankspeed = 2;
+  			// This is where tank speed is set relative to base unit
+  			tank.speed = maxTankSpeed;
   		}
 
 	});
@@ -226,126 +430,73 @@ $(document).ready(function()
 	$(window).keyup(function(event)
 	{
 		if(event.keyCode == 38)
+		// Up Arrow
   		{
-  			tankspeed = 0;
+  			tank.speed = 0;
   		}
 
+  		if(event.keyCode == 32)
+  		{
+  			reloaded = true;
+  		}
+
+  		if(event.keyCode == 39)
+  		{
+  			rightDown = false;
+  		}
+
+
+  		if(event.keyCode == 37)
+  		{
+  			leftDown = false;
+  		}
 	});
 
-	function pointRect(bx,by,px,py)
-	{
-		// bx and by are coords of box	
-		// This don't work
-		// Need to combine distance with moving out of the way
 
 
-		ctx.fillStyle = "orange";
-		ctx.fillRect(bx+tileWidth,by+tileHeight,10,10);
-
-		if(distance(px,py,bx+tileWidth/2,by+tileHeight/2) < tank.width + tileWidth/2)
-		{
-			console.log("INSIDE");
-			if(px + tank.width <= bx + tileWidth/2)
-			{
-				console.log("Left");
-				tankx = bx - tank.width;
-			}
-			else if(px - tank.width > bx + tileWidth/2)
-			{
-				console.log("Right");
-				tankx = bx + tileWidth + tank.width;
-			}
-			// Tank is on top
-			else if(py - tank.width < by + tileWidth/2)
-			{
-				console.log("Top");
-				tanky = by - tank.width;
-			}
-			else if(py + tank.width >= by + tileWidth/2)
-			{
-				console.log("Bottom");
-				tanky = by + tileWidth + tank.width;
-			}
-
-		}
-
-	}	
-
-	function distance(ax,ay,bx,by)
-	{
-		return Math.sqrt(Math.pow((ax-bx),2) + Math.pow((ay-by),2));
-	}
-
-
+//  ************************** END OF KEYBOARD INPUT ****************************************************
 
 	function draw()
 	{
-		//Converts from degrees to radians
-		var radians = (tankangle*Math.PI)/180;
-
-		//Gets the slope nessecary for the degrees
-		xspeed = -tankspeed*Math.sin(radians);
-		yspeed = -tankspeed*Math.cos(radians);
-
-		//Updates the tank position
-		tankx = tankx + xspeed;
-		tanky = tanky + yspeed;
 
 		// //Resets the background canvas from what was drawn previously
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 		drawTiles();
 
+		// Drawing control
+		if(rightDown)
+		{
+			tank.angle = tank.angle - turnspeed;
+		}
 
-		//Bounds of canvas
-		keepInsideCanvas();
+		if(leftDown)
+		{
+			tank.angle = tank.angle + turnspeed;
+		}
 
-
-		ctx.translate(tankx,tanky);
-		ctx.rotate(-tankangle*Math.PI/180);
-		//Debug rect
-		ctx.fillStyle = "grey";
-		ctx.fillRect(-((tank.width)*0.5)*tankscale,-((tank.height)*0.5)*tankscale,tank.width * tankscale, tank.height*tankscale);
-		// This 0.5 is in here because the middle of the tank is 0,0
-		ctx.drawImage(tank,-((tank.width)*0.5)*tankscale,-((tank.height)*0.5)*tankscale,tank.width * tankscale, tank.height*tankscale);
-
-		ctx.rotate(tankangle*Math.PI/180);
-		ctx.translate(-tankx,-tanky);
-		ctx.fillStyle = "orange";
-		ctx.fillRect(tankx,tanky,1,1);
+		tank.animate();
 
 		for(i = 0; i<bullets.length;i++)
 		{
 			var x = bullets[i];
-
-			if(x != undefined)
-			{
-				x.animate();
-
-				ctx.beginPath();
-				ctx.fillStyle = "black";
-				ctx.arc(x.x,x.y,bulletsize,0,2*Math.PI);
-				ctx.fillStyle = "black";
-      			ctx.fill();
-				ctx.stroke();
-
-			}
+			x.animate();
+			ctx.beginPath();
+			ctx.fillStyle = "black";
+			ctx.arc(x.x,x.y,bulletsize,0,2*Math.PI);
+  			ctx.fill();
+			ctx.stroke();
 		}
 
 
-		// FIX THIS
-		pointRect(wallCoords[1][0],wallCoords[1][1],tankx,tanky);
+		for(i=0;i<wallCoords.length;i++)
+		{
+			pointRect(wallCoords[i][0],wallCoords[i][1]);
+		}
 
 		// socket.emit("box", data);
 
 	}
-
-	function debug()
-	{
-		drawTiles();
-		// pointRect(wallCoords[1][0],wallCoords[1][1],tankx,tanky);
-	}
-
 
 	// console.log(wallCoords);
 
