@@ -84,6 +84,9 @@ $(document).ready(function()
 	canvas.width = (window.innerWidth*0.99);
 	canvas.height = (window.innerHeight*0.97);
 
+	console.log("height: " + canvas.height);
+	console.log("width: " + canvas.width);
+
 	var turnspeed = 15;
 
 	var spriteSheet = new Image();
@@ -96,21 +99,22 @@ $(document).ready(function()
 
 	var walls = [[2,6]];
 	var wallCoords = [];
-	var wallindex = 0;
 	var windowDimens = [30,30*canvas.height/canvas.width];
 
+
 	// var tankscale = 2;
+	// canvas.width/windowDimens[0] is gonna be the pixels per tile
+	// divding by tank width creates conversion factor, so tank is appropriately scaled to tile size
 	var tankscale = (canvas.width/windowDimens[0])/tankImg.width;
+	console.log("tankscale: " + tankscale);
 	var bulletsize, bulletspeed;
 	var importSize = 40;
 
 	// Will hold x,y,angle,health,nickname, color
 	var otherTanks = [];
 
-// THIS IS to prevent weird edge cases in the bullet iding process
+// This is to prevent weird edge cases in the bullet iding process
 	var idCount = 0;
-
-
 
 	var tileWidth;
 	var tileHeight;
@@ -129,41 +133,22 @@ $(document).ready(function()
 			tileWidth = canvas.width/(windowDimens[0]);
 			tileHeight = canvas.height/(windowDimens[1]);
 
+			tileWidth = Math.round(tileWidth);
+			tileHeight = Math.round(tileHeight);
+
 			// Variables set relative to base unit of the tileWidth
 			maxTankSpeed = tileWidth/5;
 			bulletspeed = maxTankSpeed * 2;
 			bulletsize = tileWidth/10;
 
 			// setInterval(draw,50);
-			setInterval(draw,150);
+			setInterval(draw,50);
 		}
 	};
 	
 
 
 // ************************** HELPER FUNCTIONS **************************************************************************
-	// function keepInsideCanvas()
-	// {
-	// 	if(tankx - (tank.width/2) < 0)
-	// 	{
-	// 		tankx = tank.width/2;
-	// 	}
-
-	// 	if(tankx + (tank.width/2) > canvas.width)
-	// 	{
-	// 		tankx = canvas.width - (tank.width/2);
-	// 	}
-
-	// 	if(tanky - (tank.height/2) < 0)
-	// 	{
-	// 		tanky = tank.height/2;
-	// 	}
-
-	// 	if(tanky + (tank.height/2) > canvas.height)
-	// 	{
-	// 		tanky = canvas.height - (tank.height/2);
-	// 	}
-	// }
 
 	function printBullets()
 	{
@@ -177,7 +162,7 @@ $(document).ready(function()
 
 	function drawTiles()
 	{
-		wallindex = 0;
+		var wallindex = 0;
 
 		for(row = 0; row < canvas.height; row += tileHeight)
 		{
@@ -192,7 +177,8 @@ $(document).ready(function()
 						wallCoords.push([col,row]);
 					}
 
-					ctx.drawImage(spriteSheet,importSize,0,importSize,importSize,col,row,tileWidth,tileHeight);
+					// Draw a wall
+					ctx.drawImage(spriteSheet,importSize*1,0,importSize,importSize,col,row,tileWidth,tileHeight);
 
 					if(wallindex + 1 < walls.length)
 					{
@@ -207,33 +193,6 @@ $(document).ready(function()
 			}
 		}
 	}
-
-// OLD CODE
-	// function pointRect(bx,by,px,py)
-	// {
-
-	// 	if(distance(px,py,bx+tileWidth/2,by+tileHeight/2) < tank.width + tileWidth/2)
-	// 	{
-	// 		if(px + tank.width <= bx + tileWidth/2)
-	// 		{
-	// 			tankx = bx - tank.width;
-	// 		}
-	// 		else if(px - tank.width > bx + tileWidth/2)
-	// 		{
-	// 			tankx = bx + tileWidth + tank.width;
-	// 		}
-	// 		// Tank is on top
-	// 		else if(py - tank.width < by + tileWidth/2)
-	// 		{
-	// 			tanky = by - tank.width;
-	// 		}
-	// 		else if(py + tank.width >= by + tileWidth/2)
-	// 		{
-	// 			tanky = by + tileWidth + tank.width;
-	// 		}
-
-	// 	}
-	// }
 
 	function pointRect(boxx,boxy)
 	{
@@ -269,12 +228,6 @@ $(document).ready(function()
 
 //  ************************** BULLET CLASS ******************************************************* 
 
-// [bullet 0]
-// Do i really need to use an id system or is there an easier way to do this?
-// I cannot just pop because if shoot at side then at top, side gets triggered but top deleted
-// NEED TO PLAY WITH INDEXOF MORE, DONT REALLY WANT TO WRITE OWN SEARCHING ALGO, OR HAVE OTHER ARRAY JUST WITH INDEXES AND MAPPED
-// EITHER WAY IS A PAIN, AM SUPRISED THAT THE CODE DIDNT BREAK EARLIER
-
 	function findBullet(currentValue)
 	{
 		// this is inputted in calling findIndex
@@ -298,6 +251,10 @@ $(document).ready(function()
 		this.xspeed = -bulletspeed*Math.sin((this.angle*Math.PI)/180);
 		this.yspeed = -bulletspeed*Math.cos((this.angle*Math.PI)/180);
 
+
+
+		// POTENTIUAL WAY TO MAKE THIS CLEANER IS BY WRITING MORE FUNCTIONS TO BE CALLED BY FIND INDEX THEN DELETING THE INDEX
+		// GETS RID OF THE LARGE FUNCTION AND SORTA SPLITS STUFF UP NICLEY
 		this.animate = function()
 		{
 			// THE PROBLEM IS THAT WHEN INITIALLY ASSIGN INDEX, NOW WHEN WE DELETE, INDEX IS WRONG
@@ -328,20 +285,21 @@ $(document).ready(function()
 				var index = bullets.findIndex(findBullet,this.id);
 				bullets.splice(index,1);
 			}
-			else
-			{
-			// SO THE PROCESSING OCCURING INSIDE THE DRAWING ISNT NEGLIGABLE
-			// BUT WALL CORRDS IS EMPTY SO WTF
+			// else
+			// {
+			// // SO THE PROCESSING OCCURING INSIDE THE DRAWING ISNT NEGLIGABLE
+			// // BUT WALL CORRDS IS EMPTY SO WTF
 
-				// for(i=0;i<wallCoords.length;i++)
-				// {
-				// 	if(distance(this.x,this.y,wallCoords[i][0] + tileWidth/2, wallCoords[i][1] + tileHeight/2) < tileWidth/2)
-				// 	{
-				// 		alert("INSIDE");
-				// 		bullets.splice(index,1);
-				// 	}
-				// }
-			}
+			// 	for(i=0;i<wallCoords.length;i++)
+			// 	{
+			// 		console.log("WTF");
+			// 	// 	if(distance(this.x,this.y,wallCoords[i][0] + tileWidth/2, wallCoords[i][1] + tileHeight/2) < tileWidth/2)
+			// 	// 	{
+			// 	// 		alert("INSIDE");
+			// 	// 		bullets.splice(index,1);
+			// 	// 	}
+			// 	}
+			// }
 
 			this.x = this.x + this.xspeed;
 			this.y = this.y + this.yspeed;
@@ -358,7 +316,6 @@ $(document).ready(function()
 		this.speed = 0;
 		this.xspeed = -this.speed*Math.sin((this.angle*Math.PI)/180);
 		this.yspeed = -this.speed*Math.cos((this.angle*Math.PI)/180);
-
 		this.animate = function()
 		{
 			this.xspeed = -this.speed*Math.sin((this.angle*Math.PI)/180);
@@ -406,9 +363,6 @@ $(document).ready(function()
 
 //  ************************** START OF KEYBOARD INPUT ****************************************************
 
-
-// /+/+/+/ /+/+/+/ /+/+/+/ /+/+/+/ /+/+/+/ /+/+/+/ /+/+/+/ KEYEVENT UP DOES NOT REGISTER ON A QUICK SPACEBAR PRESS, NEED TO RETHINK HOW TO LIMIT FIRE RATE
-
 	$(window).keydown(function(event)
 	{
 		var keyCode = event.keyCode;
@@ -418,7 +372,6 @@ $(document).ready(function()
   		{
   			idCount++;
   			bullets.push(new bullet(idCount));
-  			// printBullets();
   			reloaded = false;
   		}
 
@@ -501,16 +454,8 @@ $(document).ready(function()
 		{
 			var x = bullets[i];
 			x.animate();
-			if(x.id == 0)
-			{
-				ctx.fillStyle = "black";
-			}
-			else
-			{
-				ctx.fillStyle = "white";
-			}
 			ctx.beginPath();
-			// ctx.fillStyle = "black";
+			ctx.fillStyle = "black";
 			ctx.arc(x.x,x.y,bulletsize,0,2*Math.PI);
   			ctx.fill();
 			ctx.stroke();
@@ -527,7 +472,8 @@ $(document).ready(function()
 
 	}
 
-	// console.log(wallCoords);
+	drawTiles();
+	console.log(wallCoords);
 
 
 });
