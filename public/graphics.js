@@ -94,7 +94,7 @@ $(document).ready(function()
 
 	var bullets = [];
 
-	var walls = [[5,3]];
+	var walls = [[2,6]];
 	var wallCoords = [];
 	var wallindex = 0;
 	var windowDimens = [30,30*canvas.height/canvas.width];
@@ -106,6 +106,9 @@ $(document).ready(function()
 
 	// Will hold x,y,angle,health,nickname, color
 	var otherTanks = [];
+
+// THIS IS to prevent weird edge cases in the bullet iding process
+	var idCount = 0;
 
 
 
@@ -129,10 +132,10 @@ $(document).ready(function()
 			// Variables set relative to base unit of the tileWidth
 			maxTankSpeed = tileWidth/5;
 			bulletspeed = maxTankSpeed * 2;
-			bulletsize = tileWidth/15;
+			bulletsize = tileWidth/10;
 
 			// setInterval(draw,50);
-			setInterval(draw,50);
+			setInterval(draw,150);
 		}
 	};
 	
@@ -161,6 +164,15 @@ $(document).ready(function()
 	// 		tanky = canvas.height - (tank.height/2);
 	// 	}
 	// }
+
+	function printBullets()
+	{
+		for(i = 0; i<bullets.length;i++)
+		{
+			console.log(bullets[i]);
+		}
+		console.log("DONE");
+	}
 
 
 	function drawTiles()
@@ -290,43 +302,49 @@ $(document).ready(function()
 		{
 			// THE PROBLEM IS THAT WHEN INITIALLY ASSIGN INDEX, NOW WHEN WE DELETE, INDEX IS WRONG
 			//Updates the bullet position
-			this.x = this.x + this.xspeed;
-			this.y = this.y + this.yspeed;
 
-			var index = bullets.findIndex(findBullet,this.id);
+			// I STW(TCHED THE PACEMENT OIF POSITION UPDATING)
 
+			// WELL I WAS USING THE SPLICE METHOD WRONG
+			// THERE GOES FIVE HOURS OF MY TIME
 
 			if(this.x - (bulletsize/2) < 0)
 			{
-				bullets.splice(index,index + 1);
+				var index = bullets.findIndex(findBullet,this.id);
+				bullets.splice(index,1);
 			}
-			else if(this.x + (bulletsize/2) > canvas.width)
+			if(this.x + (bulletsize/2) > canvas.width)
 			{
-				bullets.splice(index,index + 1);
+				var index = bullets.findIndex(findBullet,this.id);
+				bullets.splice(index,1);
 			}
-			else if(this.y - (bulletsize/2) < 0)
+			if(this.y - (bulletsize/2) < 0)
 			{
-				bullets.splice(index,index + 1);
+				var index = bullets.findIndex(findBullet,this.id);
+				bullets.splice(index,1);
 			}
-			else if(this.y + (bulletsize/2) > canvas.height)
+			if(this.y + (bulletsize/2) > canvas.height)
 			{
-				bullets.splice(index,index + 1);
+				var index = bullets.findIndex(findBullet,this.id);
+				bullets.splice(index,1);
 			}
 			else
 			{
-				// SO THE PROCESSING OCCURING INSIDE THE DRAWING ISNT NEGLIGABLE
+			// SO THE PROCESSING OCCURING INSIDE THE DRAWING ISNT NEGLIGABLE
+			// BUT WALL CORRDS IS EMPTY SO WTF
+
 				// for(i=0;i<wallCoords.length;i++)
 				// {
-				// 	// alert("INSIDE");
 				// 	if(distance(this.x,this.y,wallCoords[i][0] + tileWidth/2, wallCoords[i][1] + tileHeight/2) < tileWidth/2)
 				// 	{
-				// 		bullets.splice(this.index,this.index + 1);
-				// 		// delete bullets[this.index];
-				// 		console.log("DELETED");
-				// 		console.log(bullets[0]);
+				// 		alert("INSIDE");
+				// 		bullets.splice(index,1);
 				// 	}
 				// }
 			}
+
+			this.x = this.x + this.xspeed;
+			this.y = this.y + this.yspeed;
 		}
 	}
 
@@ -398,7 +416,9 @@ $(document).ready(function()
 		//Space Bar
   		if(keyCode == 32 && reloaded)
   		{
-  			bullets.push(new bullet(bullets.length));
+  			idCount++;
+  			bullets.push(new bullet(idCount));
+  			// printBullets();
   			reloaded = false;
   		}
 
@@ -481,8 +501,16 @@ $(document).ready(function()
 		{
 			var x = bullets[i];
 			x.animate();
+			if(x.id == 0)
+			{
+				ctx.fillStyle = "black";
+			}
+			else
+			{
+				ctx.fillStyle = "white";
+			}
 			ctx.beginPath();
-			ctx.fillStyle = "black";
+			// ctx.fillStyle = "black";
 			ctx.arc(x.x,x.y,bulletsize,0,2*Math.PI);
   			ctx.fill();
 			ctx.stroke();
@@ -494,6 +522,7 @@ $(document).ready(function()
 			pointRect(wallCoords[i][0],wallCoords[i][1]);
 		}
 
+		printBullets();
 		// socket.emit("box", data);
 
 	}
