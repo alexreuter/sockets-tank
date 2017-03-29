@@ -22,10 +22,7 @@ var io = socket(server);
 
 io.sockets.on("connection", newConnection);
 
-// io.sockets.on('disconnect', function () {
-// 	console.log("Someone left");
 
-//   });
 
 
 function newConnection(socket)
@@ -34,9 +31,14 @@ function newConnection(socket)
 
 	socket.on("tank", message);
 
+	socket.on('disconnect', function () {
+	console.log("Someone left");
+
+  });
+
 	function message(data)
 	{
-		console.log(data);
+		// console.log(data);
 		socket.broadcast.emit("tank", data);
 		// console.log("sent");
 	}

@@ -14,6 +14,13 @@ Braindump:
  - Drawing other tanks will create a phantom tank
  	- Not true, just need to deal with when a tank leaves the server
  - Can get rid of bullet ids, no longer needed since parsed in order
+ - Bullets don't dissapear immediatly upon block contact, thats an order issue, where checks if in block after draws
+
+ STILL NEED TO IMPLIMENT:
+ - Bullet sharing
+ - Health system
+ - Death system
+ - Clean up a lot of this code / put in seperate files
 */
 
 
@@ -93,6 +100,17 @@ $(document).ready(function()
 // *************************************** GET NICKNAME ************************************************
 var nickname = prompt("What is your nickname?");
 
+// ****** SOCKET DISCONNECT****
+
+window.onbeforeunload = function(){
+	socket.close();
+}
+
+socket.on("disconnect",function()
+{
+	alert("Where did yeall go?");
+});
+
 // **************************************** NETWORKING FUNCTIONS **************************************************************************
 	socket.on("tank",function(data)
 	{
@@ -115,8 +133,6 @@ var nickname = prompt("What is your nickname?");
 		}
 
 	});
-	// x,y,angle,health,nickname
-	
 
 // ************************** HELPER FUNCTIONS **************************************************************************
 
@@ -455,9 +471,6 @@ var nickname = prompt("What is your nickname?");
 			ctx.fillText(currentTank[4],currentTank[0]-(tankImg.width),currentTank[1]-(tankImg.height*1.4));
 		}
 
-		// printBullets();
-		// socket.emit("box", data);
-
 		// console.log(tankImg.width);
 		// console.log(tankImg.height);
 
@@ -465,7 +478,7 @@ var nickname = prompt("What is your nickname?");
 
 	}
 
-	drawTiles();
+	// drawTiles();
 
 
 });
