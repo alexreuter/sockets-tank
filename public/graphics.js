@@ -1,12 +1,17 @@
 
 var socket = io();
 
+/*
+WORKING ON NOW: Lines of bullets
 
+Braindump: Put positional error checking after each bullet is drawn, to slow down as a whole
+Function that loops through all bullet positions and checks if out of bounds or inside a box
+*/
 
 /*KNOWN BUGS:
  - Timing issue on the bullets makes canvas re-animate in too short a time
  - Ids for the tanks are pseudo random, need to be changed to be actual ids
- - 
+ - The break in the bullet checking code will cause multiple not to be deleted at the same time
 */
 
 
@@ -37,11 +42,6 @@ $(document).ready(function()
 	var wallCoords = [];
 	var windowDimens = [30,30*canvas.height/canvas.width];
 
-
-	// canvas.width/windowDimens[0] is gonna be the pixels per tile
-	// divding by tank width creates conversion factor, so tank is appropriately scaled to tile size
-	var tankscale = (canvas.width/windowDimens[0])/tankImg.width;
-	console.log("tankscale: " + tankscale);
 	var bulletsize, bulletspeed;
 	var importSize = 40;
 	var initialHealth = 10;
@@ -54,6 +54,7 @@ $(document).ready(function()
 
 	var tileWidth;
 	var tileHeight;
+	var tankscale;
 
 	var maxTankSpeed;
 
@@ -67,6 +68,10 @@ $(document).ready(function()
 	spriteSheet.onload = function() {
 		tankImg.onload = function()
 		{
+			// canvas.width/windowDimens[0] is gonna be the pixels per tile
+			// divding by tank width creates conversion factor, so tank is appropriately scaled to tile size
+			tankscale = (canvas.width/windowDimens[0])/tankImg.width;
+			console.log("tankscale: " + tankscale);
 
 			tileWidth = canvas.width/(windowDimens[0]);
 			tileHeight = canvas.height/(windowDimens[1]);
@@ -114,9 +119,9 @@ $(document).ready(function()
 
 	function printBullets()
 	{
-		for(i = 0; i<otherTanks.length;i++)
+		for(i = 0; i<bullets.length;i++)
 		{
-			console.log(otherTanks[i]);
+			console.log(bullets[i]);
 		}
 		console.log("DONE");
 	}
@@ -213,49 +218,10 @@ $(document).ready(function()
 		this.xspeed = -bulletspeed*Math.sin((this.angle*Math.PI)/180);
 		this.yspeed = -bulletspeed*Math.cos((this.angle*Math.PI)/180);
 
-
-
 		// POTENTIUAL WAY TO MAKE THIS CLEANER IS BY WRITING MORE FUNCTIONS TO BE CALLED BY FIND INDEX THEN DELETING THE INDEX
 		// GETS RID OF THE LARGE FUNCTION AND SORTA SPLITS STUFF UP NICLEY
 		this.animate = function()
 		{
-			var index = bullets.findIndex(findBullet,this.id);
-
-			if(this.x - (bulletsize/2) < 0)
-			{
-				bullets.splice(index,1);
-			}
-			if(this.x + (bulletsize/2) > canvas.width)
-			{
-				bullets.splice(index,1);
-			}
-			if(this.y - (bulletsize/2) < 0)
-			{
-				bullets.splice(index,1);
-			}
-			if(this.y + (bulletsize/2) > canvas.height)
-			{
-				bullets.splice(index,1);
-			}
-			else
-			{
-			// SO THE PROCESSING OCCURING INSIDE THE DRAWING ISNT NEGLIGABLE
-			// BUT WALL CORRDS IS EMPTY SO WTF
-
-				for(i=0;i<wallCoords.length;i++)
-				{
-				// 	console.log("WTF");
-				// 	console.log(wallCoords);
-					// if(distance(this.x,this.y,wallCoords[i][0] + tileWidth/2, wallCoords[i][1] + tileHeight/2) < tileWidth/2)
-					// {
-					// 	alert("INSIDE");
-					// 	bullets.splice(index,1);
-					// }
-				}
-
-				console.log("dog");
-			}
-
 			this.x = this.x + this.xspeed;
 			this.y = this.y + this.yspeed;
 		}
@@ -415,6 +381,47 @@ $(document).ready(function()
 
 		tank.animate();
 
+		// Alright, so still gonna animate each bullet seperately, but error checking is gonna be as a whole.
+
+
+		/*var index = bullets.findIndex(findBullet,this.id);
+
+			if(this.x - (bulletsize/2) < 0)
+			{
+				bullets.splice(index,1);
+			}
+			if(this.x + (bulletsize/2) > canvas.width)
+			{
+				bullets.splice(index,1);
+			}
+			if(this.y - (bulletsize/2) < 0)
+			{
+				bullets.splice(index,1);
+			}
+			if(this.y + (bulletsize/2) > canvas.height)
+			{
+				bullets.splice(index,1);
+			}
+			else
+			{
+			// SO THE PROCESSING OCCURING INSIDE THE DRAWING ISNT NEGLIGABLE
+			// BUT WALL CORRDS IS EMPTY SO WTF
+
+				for(i=0;i<wallCoords.length;i++)
+				{
+				// 	console.log("WTF");
+				// 	console.log(wallCoords);
+					// if(distance(this.x,this.y,wallCoords[i][0] + tileWidth/2, wallCoords[i][1] + tileHeight/2) < tileWidth/2)
+					// {
+					// 	alert("INSIDE");
+					// 	bullets.splice(index,1);
+					// }
+				}
+
+				// console.log("dog");
+			}*/
+
+
 		for(i = 0; i<bullets.length;i++)
 		{
 			var x = bullets[i];
@@ -424,6 +431,50 @@ $(document).ready(function()
 			ctx.arc(x.x,x.y,bulletsize,0,2*Math.PI);
   			ctx.fill();
 			ctx.stroke();
+		}
+
+		console.log("All drawn");
+
+		for(i=0;i<bullets.length;i++)
+		{
+			var bullet = bullets[i];
+
+			if(bullet.x - (bulletsize/2) < 0)
+			{
+				bullets.splice(i,1);
+				i--;
+			}
+			if(bullet.x + (bulletsize/2) > canvas.width)
+			{
+				bullets.splice(i,1);
+				i--;
+			}
+			if(bullet.y - (bulletsize/2) < 0)
+			{
+				bullets.splice(i,1);
+				i--;
+			}
+			if(bullet.y + (bulletsize/2) > canvas.height)
+			{
+				bullets.splice(i,1);
+				i--;
+			}
+
+			console.log("length" + bullets.length);
+			console.log("i" + i);
+			console.log(bullet);
+			console.log("All bound checked");
+
+			for(x=0;x<wallCoords.length;x++)
+			{
+				console.log("Running inside wall coords")
+				if(distance(bullet.x,bullet.y,wallCoords[x][0] + tileWidth/2, wallCoords[x][1] + tileHeight/2) < tileWidth/2)
+				{
+					alert("INSIDE");
+					bullets.splice(x,1);
+				}
+			}
+			console.log("after boxes");
 		}
 
 
