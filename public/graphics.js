@@ -1,18 +1,18 @@
 
 var socket = io();
 
+// Stretch idea: Have agario style and follow tank around,
+// Or use maze generation algorithum, and have people spawn at different corners or something like a ctf?
+
 /*
-WORKING ON NOW: Bullets don't come out of the turret of the tank
+WORKING ON NOW: 
 
 Braindump: 
 */
 
 /*KNOWN BUGS:
- - Ids for the tanks are pseudo random, need to be changed to be actual ids
  - Drawing other tanks will create a phantom tank
  	- Not true, just need to deal with when a tank leaves the server
- - Bullets don't come out of the turret of the tank
- - Need to dynamically size text
  - Can get rid of bullet ids, no longer needed since parsed in order
 */
 
@@ -90,16 +90,18 @@ $(document).ready(function()
 			drawingTimer = setTimeout(draw,1);
 		}
 	};
-	
+// *************************************** GET NICKNAME ************************************************
+var nickname = prompt("What is your nickname?");
+
 // **************************************** NETWORKING FUNCTIONS **************************************************************************
 	socket.on("tank",function(data)
 	{
-		var id = data[4];
+		var id = data[5];
 		var found = false;
 
 		for(i=0;i<otherTanks.length;i++)
 		{
-			if(otherTanks[i][4] == id)
+			if(otherTanks[i][5] == id)
 			{
 				found = true;
 				otherTanks[i] = data;
@@ -234,7 +236,6 @@ $(document).ready(function()
 	{
 		this.x = x;
 		this.y = y;
-		this.nickname = Math.random();
 		this.angle = angle;
 		this.speed = 0;
 		this.xspeed = -this.speed*Math.sin((this.angle*Math.PI)/180);
@@ -276,10 +277,14 @@ $(document).ready(function()
 			// This 0.5 is in here because the middle of the tank is 0,0
 			ctx.drawImage(tankImg,-((tankImg.width)*0.5)*tankscale,-((tankImg.height)*0.5)*tankscale,tankImg.width * tankscale, tankImg.height*tankscale);
 			ctx.rotate(this.angle*Math.PI/180);
-			ctx.translate(-this.x,-this.y);	
+			ctx.translate(-this.x,-this.y);
+
+			// Drawing nickname
+			ctx.font = (tankscale*5) + "px Arial";
+			ctx.fillText(nickname,this.x-(tankImg.width),this.y-(tankImg.height*1.4));
 
 			// x,y,angle,health,nickname
-			var data = [this.x,this.y,this.angle,this.health,this.nickname];
+			var data = [this.x,this.y,this.angle,this.health,nickname, socket.io.engine.id];
 			socket.emit("tank", data);
 		}
 	}
@@ -446,8 +451,8 @@ $(document).ready(function()
 			ctx.translate(-currentTank[0],-currentTank[1]);
 
 			// ID DRAWING
-			ctx.font = "10px Arial";
-			ctx.fillText(currentTank[4],currentTank[0]-(tankImg.width),currentTank[1]-(tankImg.height));
+			ctx.font = (tankscale*5) + "px Arial";
+			ctx.fillText(currentTank[4],currentTank[0]-(tankImg.width),currentTank[1]-(tankImg.height*1.4));
 		}
 
 		// printBullets();
@@ -461,7 +466,6 @@ $(document).ready(function()
 	}
 
 	drawTiles();
-	console.log(wallCoords);
 
 
 });

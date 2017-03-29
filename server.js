@@ -31,6 +31,7 @@ io.sockets.on("connection", newConnection);
 function newConnection(socket)
 {
 	console.log("New connection: " + socket.id);
+
 	socket.on("tank", message);
 
 	function message(data)
