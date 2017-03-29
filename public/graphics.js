@@ -2,7 +2,7 @@
 var socket = io();
 
 /*
-WORKING ON NOW: 
+WORKING ON NOW: Bullets don't come out of the turret of the tank
 
 Braindump: 
 */
@@ -10,7 +10,10 @@ Braindump:
 /*KNOWN BUGS:
  - Ids for the tanks are pseudo random, need to be changed to be actual ids
  - Drawing other tanks will create a phantom tank
+ 	- Not true, just need to deal with when a tank leaves the server
  - Bullets don't come out of the turret of the tank
+ - Need to dynamically size text
+ - Can get rid of bullet ids, no longer needed since parsed in order
 */
 
 
@@ -83,9 +86,8 @@ $(document).ready(function()
 			bulletspeed = maxTankSpeed * 2;
 			bulletsize = tileWidth/10;
 
-			// setInterval(draw,50);
-			// setInterval(draw,50);
-			drawingTimer = setTimeout(draw,50);
+			// This is basically just the initial load time, because setTimeout gets changed in draw
+			drawingTimer = setTimeout(draw,1);
 		}
 	};
 	
@@ -210,12 +212,12 @@ $(document).ready(function()
 
 	var bullet = function(id)
 	{
-		this.x = tank.x;
-		this.y = tank.y;
 		this.id = id;
 		this.angle = tank.angle;
 		this.xspeed = -bulletspeed*Math.sin((this.angle*Math.PI)/180);
 		this.yspeed = -bulletspeed*Math.cos((this.angle*Math.PI)/180);
+		this.x = tank.x - (Math.sin((this.angle*Math.PI)/180) * tankImg.width) - (this.xspeed*0.65);
+		this.y = tank.y - (Math.cos((this.angle*Math.PI)/180) * tankImg.height) - (this.yspeed*0.65);
 
 		// POTENTIUAL WAY TO MAKE THIS CLEANER IS BY WRITING MORE FUNCTIONS TO BE CALLED BY FIND INDEX THEN DELETING THE INDEX
 		// GETS RID OF THE LARGE FUNCTION AND SORTA SPLITS STUFF UP NICLEY
@@ -274,7 +276,7 @@ $(document).ready(function()
 			// This 0.5 is in here because the middle of the tank is 0,0
 			ctx.drawImage(tankImg,-((tankImg.width)*0.5)*tankscale,-((tankImg.height)*0.5)*tankscale,tankImg.width * tankscale, tankImg.height*tankscale);
 			ctx.rotate(this.angle*Math.PI/180);
-			ctx.translate(-this.x,-this.y);		
+			ctx.translate(-this.x,-this.y);	
 
 			// x,y,angle,health,nickname
 			var data = [this.x,this.y,this.angle,this.health,this.nickname];
@@ -442,10 +444,17 @@ $(document).ready(function()
 			ctx.drawImage(tankImg,-((tankImg.width)*0.5)*tankscale,-((tankImg.height)*0.5)*tankscale,tankImg.width * tankscale, tankImg.height*tankscale);
 			ctx.rotate(currentTank[2]*Math.PI/180);
 			ctx.translate(-currentTank[0],-currentTank[1]);
+
+			// ID DRAWING
+			ctx.font = "10px Arial";
+			ctx.fillText(currentTank[4],currentTank[0]-(tankImg.width),currentTank[1]-(tankImg.height));
 		}
 
 		// printBullets();
 		// socket.emit("box", data);
+
+		// console.log(tankImg.width);
+		// console.log(tankImg.height);
 
 		drawingTimer = setTimeout(draw,50);
 
