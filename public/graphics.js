@@ -2,22 +2,20 @@
 var socket = io();
 
 /*
-WORKING ON NOW: Lines of bullets
+WORKING ON NOW: 
 
-Braindump: Put positional error checking after each bullet is drawn, to slow down as a whole
-Function that loops through all bullet positions and checks if out of bounds or inside a box
+Braindump: 
 */
 
 /*KNOWN BUGS:
- - Timing issue on the bullets makes canvas re-animate in too short a time
  - Ids for the tanks are pseudo random, need to be changed to be actual ids
- - The break in the bullet checking code will cause multiple not to be deleted at the same time
+ - Drawing other tanks will create a phantom tank
+ - Bullets don't come out of the turret of the tank
 */
 
 
 $(document).ready(function() 
 {
-	// var socket = io.connect("http://localhost:3000");
 	var canvas = document.getElementById("myCanvas");
 	var ctx = canvas.getContext("2d");
 	ctx.imageSmoothingEnabled = false;
@@ -32,6 +30,7 @@ $(document).ready(function()
 
 	var spriteSheet = new Image();
 	spriteSheet.src = "level.png";
+
 	//Tank icon loading
 	var tankImg = new Image();
 	tankImg.src = "tank.png";
@@ -49,7 +48,7 @@ $(document).ready(function()
 	// Will hold x,y,angle,health,nickname, color
 	var otherTanks = [];
 
-// This is to prevent weird edge cases in the bullet iding process
+	// This is to prevent weird edge cases in the bullet iding process
 	var idCount = 0;
 
 	var tileWidth;
@@ -381,47 +380,6 @@ $(document).ready(function()
 
 		tank.animate();
 
-		// Alright, so still gonna animate each bullet seperately, but error checking is gonna be as a whole.
-
-
-		/*var index = bullets.findIndex(findBullet,this.id);
-
-			if(this.x - (bulletsize/2) < 0)
-			{
-				bullets.splice(index,1);
-			}
-			if(this.x + (bulletsize/2) > canvas.width)
-			{
-				bullets.splice(index,1);
-			}
-			if(this.y - (bulletsize/2) < 0)
-			{
-				bullets.splice(index,1);
-			}
-			if(this.y + (bulletsize/2) > canvas.height)
-			{
-				bullets.splice(index,1);
-			}
-			else
-			{
-			// SO THE PROCESSING OCCURING INSIDE THE DRAWING ISNT NEGLIGABLE
-			// BUT WALL CORRDS IS EMPTY SO WTF
-
-				for(i=0;i<wallCoords.length;i++)
-				{
-				// 	console.log("WTF");
-				// 	console.log(wallCoords);
-					// if(distance(this.x,this.y,wallCoords[i][0] + tileWidth/2, wallCoords[i][1] + tileHeight/2) < tileWidth/2)
-					// {
-					// 	alert("INSIDE");
-					// 	bullets.splice(index,1);
-					// }
-				}
-
-				// console.log("dog");
-			}*/
-
-
 		for(i = 0; i<bullets.length;i++)
 		{
 			var x = bullets[i];
@@ -432,8 +390,6 @@ $(document).ready(function()
   			ctx.fill();
 			ctx.stroke();
 		}
-
-		console.log("All drawn");
 
 		for(i=0;i<bullets.length;i++)
 		{
@@ -460,21 +416,13 @@ $(document).ready(function()
 				i--;
 			}
 
-			console.log("length" + bullets.length);
-			console.log("i" + i);
-			console.log(bullet);
-			console.log("All bound checked");
-
 			for(x=0;x<wallCoords.length;x++)
 			{
-				console.log("Running inside wall coords")
 				if(distance(bullet.x,bullet.y,wallCoords[x][0] + tileWidth/2, wallCoords[x][1] + tileHeight/2) < tileWidth/2)
 				{
-					alert("INSIDE");
 					bullets.splice(x,1);
 				}
 			}
-			console.log("after boxes");
 		}
 
 
