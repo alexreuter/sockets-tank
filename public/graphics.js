@@ -11,12 +11,12 @@ Braindump:
 */
 
 /*KNOWN BUGS:
- - Drawing other tanks will create a phantom tank
- 	- Not true, just need to deal with when a tank leaves the server
+ - Text scaling doesnt actually work, x and y are not relative, need to make relative with personalized constant like tile width?
  - Can get rid of bullet ids, no longer needed since parsed in order
  - Bullets don't dissapear immediatly upon block contact, thats an order issue, where checks if in block after draws
 
  STILL NEED TO IMPLIMENT:
+ - Color system?? Might be to complex for now, could just highlight own tank
  - Bullet sharing
  - Health system
  - Death system
@@ -106,9 +106,20 @@ window.onbeforeunload = function(){
 	socket.close();
 }
 
-socket.on("disconnect",function()
+socket.on("disconnect",function(data)
 {
-	alert("Where did yeall go?");
+	console.log(data.substring(2));
+
+	// This is to get rid of sockets auto generated /#
+	data = data.substring(2);
+
+	for(i = 0;i<otherTanks.length;i++)
+	{
+		if(otherTanks[i][5] == data)
+		{
+			otherTanks.splice(i,1);
+		}
+	}
 });
 
 // **************************************** NETWORKING FUNCTIONS **************************************************************************
