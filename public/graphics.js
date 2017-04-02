@@ -2,30 +2,54 @@
 var socket = io();
 
 // Stretch idea: Have agario style and follow tank around,
+// Would need to translate, could be a pretty cool idea
 // Or use maze generation algorithum, and have people spawn at different corners or something like a ctf?
 
 /*
-WORKING ON NOW: 
+WORKING ON NOW: Need to make hits by bullets happen only once with ordering of bullet check code
 
-Braindump: 
+
+Braindump: Could easily just send in wrong health and make yourself invisible, way to get around is have everyone track everyone and then only change health if everyone agrees/majority 
 */
 
 /*KNOWN BUGS:
  - Text scaling doesnt actually work, x and y are not relative, need to make relative with personalized constant like tile width?
  - Can get rid of bullet ids, no longer needed since parsed in order
  - Bullets don't dissapear immediatly upon block contact, thats an order issue, where checks if in block after draws
+ - HTML Local Storage to store the nickname
+ - Bullets appear to duplicate with slow processing speed
 
  STILL NEED TO IMPLIMENT:
  - Color system?? Might be to complex for now, could just highlight own tank
  - Bullet sharing
  - Health system
  - Death system
+ - Spawning in a different spot
+ - Leaderboard
+ - Survival of the fittest setup
  - Clean up a lot of this code / put in seperate files
+*/
+
+/*
+For the bullets
+Each client will calculate own bullet's outcome
+The outcome in terms of health or deletion will be sent to the server
+All the other bullets are simply displayed, but put through the collision method, to see if I am hit
+Everyone just checks if they get hit by otherBullets
+*/
+
+/*
+Sizing bugs:
+ - Bullet speed is not constant with scale
+ - Text sizing is not constant
+ - X and y are not constant, ie you can go off the page
+
 */
 
 
 $(document).ready(function() 
 {
+
 	var canvas = document.getElementById("myCanvas");
 	var ctx = canvas.getContext("2d");
 	ctx.imageSmoothingEnabled = false;
@@ -53,10 +77,10 @@ $(document).ready(function()
 
 	var bulletsize, bulletspeed;
 	var importSize = 40;
-	var initialHealth = 10;
 
 	// Will hold x,y,angle,health,nickname, color
 	var otherTanks = [];
+	var otherBullets = [];
 
 	// This is to prevent weird edge cases in the bullet iding process
 	var idCount = 0;
@@ -70,6 +94,7 @@ $(document).ready(function()
 	var rightDown = false;
 	var leftDown = false;
 	var reloaded = true;
+
 
 	var drawingTimer;
 
@@ -143,6 +168,11 @@ socket.on("disconnect",function(data)
 			otherTanks.push(data);
 		}
 
+	});
+
+	socket.on("bullet", function(data)
+	{
+		otherBullets.push(data);
 	});
 
 // ************************** HELPER FUNCTIONS **************************************************************************
@@ -267,7 +297,7 @@ socket.on("disconnect",function(data)
 		this.speed = 0;
 		this.xspeed = -this.speed*Math.sin((this.angle*Math.PI)/180);
 		this.yspeed = -this.speed*Math.cos((this.angle*Math.PI)/180);
-		this.health = initialHealth;
+		this.health = 10;
 
 		this.animate = function()
 		{
@@ -306,9 +336,21 @@ socket.on("disconnect",function(data)
 			ctx.rotate(this.angle*Math.PI/180);
 			ctx.translate(-this.x,-this.y);
 
+			// HITBOX CIRCLE
+			ctx.beginPath();
+			ctx.fillStyle = "transparent";
+			ctx.arc(tank.x,tank.y,tankImg.width*tankscale*0.5,0,2*Math.PI);
+  			ctx.fill();
+			ctx.stroke();
+
 			// Drawing nickname
+			ctx.fillStyle = "white";
 			ctx.font = (tankscale*5) + "px Arial";
-			ctx.fillText(nickname,this.x-(tankImg.width),this.y-(tankImg.height*1.4));
+			ctx.fillText(nickname + " " + tank.health,this.x-(tankImg.width),this.y-(tankImg.height*1.4));
+
+			// Health bar
+			// ctx.fillStyle = "green";
+			// ctx.fillRect()
 
 			// x,y,angle,health,nickname
 			var data = [this.x,this.y,this.angle,this.health,nickname, socket.io.engine.id];
@@ -342,14 +384,11 @@ socket.on("disconnect",function(data)
   			rightDown = true;
   		}
 
-
   		if(keyCode == 37)
   		// Left 
   		{
   			leftDown = true;
   		}
-
-  		
 
   		if(event.keyCode == 38)
   		// Up Arrow
@@ -400,6 +439,9 @@ socket.on("disconnect",function(data)
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 		drawTiles();
+
+		ctx.fillStyle = "red";
+		ctx.fillRect(30,30,10,10);
 
 		// Drawing control
 		if(rightDown)
@@ -459,6 +501,33 @@ socket.on("disconnect",function(data)
 			}
 		}
 
+		for(i=0;i<bullets.length;i++)
+		{
+			socket.emit("bullet", [bullets[i].x,bullets[i].y]);
+		}
+
+		console.log("otherBullets: " + otherBullets);
+
+		for(i=0;i<otherBullets.length;i++)
+		{
+			ctx.beginPath();
+			ctx.fillStyle = "orange";
+			ctx.arc(otherBullets[i][0],otherBullets[i][1],bulletsize,0,2*Math.PI);
+  			ctx.fill();
+			ctx.stroke();
+		}
+
+		for(i=0;i<otherBullets.length;i++)
+		{
+			if(distance(tank.x,tank.y,otherBullets[i][0],otherBullets[i][1]) < (tankImg.width*tankscale*0.5))
+			{
+				console.log(otherBullets.splice(i,1));
+				tank.health--;
+			}
+		}
+
+		otherBullets.splice(0,otherBullets.length);
+
 
 		for(i=0;i<wallCoords.length;i++)
 		{
@@ -478,6 +547,7 @@ socket.on("disconnect",function(data)
 			ctx.translate(-currentTank[0],-currentTank[1]);
 
 			// ID DRAWING
+			ctx.fillStyle = "white";
 			ctx.font = (tankscale*5) + "px Arial";
 			ctx.fillText(currentTank[4],currentTank[0]-(tankImg.width),currentTank[1]-(tankImg.height*1.4));
 		}
@@ -493,5 +563,3 @@ socket.on("disconnect",function(data)
 
 
 });
-
-	

@@ -31,19 +31,24 @@ function newConnection(socket)
 {
 	console.log("New connection: " + socket.id);
 
-	socket.on("tank", message);
-
-	socket.on('disconnect', function () {
-		console.log("Someone left " + socket.id);
-		io.emit("disconnect",socket.id);
-  	});
-
-	function message(data)
+	socket.on("tank", function(data)
 	{
 		console.log(data);
 		socket.broadcast.emit("tank", data);
 		// console.log("sent");
-	}
+	});
+
+	socket.on('disconnect', function () 
+	{
+		console.log("Someone left " + socket.id);
+		io.emit("disconnect",socket.id);
+  	});
+
+	socket.on("bullet", function(data)
+	{
+		console.log(data);
+		socket.broadcast.emit("bullet",data);
+	});
 }
 
 
