@@ -102,7 +102,6 @@ $(document).ready(function()
 			// divding by tank width creates conversion factor, so tank is appropriately scaled to tile size
 			tankscale = (canvas.width/windowDimens[0])/tankImg.width;
 
-
 			console.log("tankscale: " + tankscale);
 			console.log("imgsize " + tankImg.width)
 
@@ -123,6 +122,7 @@ $(document).ready(function()
 			drawingTimer = setTimeout(draw,1);
 		}
 	};
+
 // *************************************** GET NICKNAME ************************************************
 var nickname = prompt("What is your nickname?");
 
@@ -222,7 +222,7 @@ socket.on("disconnect",function(data)
 			// ctx.beginPath();
 			// ctx.fillStyle = "orange";
 			// ctx.arc(boxx+(tileWidth/2),boxy+(tileHeight/2),(tileWidth/2),0,2*Math.PI);
-  	// 		ctx.fill();
+  			// ctx.fill();
 			// ctx.stroke();
 
 
@@ -238,7 +238,7 @@ socket.on("disconnect",function(data)
 			{
 				tank.y = boxy - tileHeight/2;
 			}
-			else if(tank.y + (tileHeight/2) > boxy + (tileWidth/2))
+			else if(tank.y + (tileHeight/2) > boxy + (tileHeight/2))
 			{
 				tank.y = boxy + tileHeight + (tileHeight/2);
 			}
@@ -339,12 +339,12 @@ socket.on("disconnect",function(data)
 			// x,y,angle,health,nickname
 			var data = [this.x,this.y,this.angle,this.health,nickname, socket.io.engine.id];
 			socket.emit("tank", data);
+			drawBullets();
 		}
 	}
 
 
 //  ************************** END OF  BULLET CLASS *******************************************************
-
 
 	var tank = new tankClass(canvas.width/2,canvas.height/10+25,0,0);
 
@@ -401,7 +401,6 @@ socket.on("disconnect",function(data)
   			rightDown = false;
   		}
 
-
   		if(event.keyCode == 37)
   		{
   			leftDown = false;
@@ -409,13 +408,98 @@ socket.on("disconnect",function(data)
 	});
 
 
+	function drawBullets()
+	{
+		var length = bullets.length;
+		for(i = 0; i<length;i++)
+		{
+			console.log(i);
+			console.log(length);
+			console.log("******");
+			// console.log("start" + i);
+			var bullet = bullets[i];
+			bullet.animate();
+			console.log(i);
+
+			// ELSE IF IS REDUNDANT
+
+			if(bullet.x - (bulletsize/2) < 0)
+			{
+				bullets.splice(i,1);
+				i--;
+				length--;
+				console.log("tooleft");
+			}
+			else if(bullet.x + (bulletsize/2) > canvas.width)
+			{
+				bullets.splice(i,1);
+				i--;
+				length--;
+				console.log("tooright");
+			}
+			else if(bullet.y - (bulletsize/2) < 0)
+			{
+				bullets.splice(i,1);
+				i--;
+				length--;
+				console.log("toohigh");
+			}
+			else if(bullet.y + (bulletsize/2) > canvas.height)
+			{
+				bullets.splice(i,1);
+				i--;
+				length--;
+				console.log("toolow");
+			}
+			else
+			{
+				console.log(i);
+				for(x=0;x<wallCoords.length;x++)
+				{
+					if(distance(bullet.x,bullet.y,wallCoords[x][0] + tileWidth/2, wallCoords[x][1] + tileHeight/2) < tileWidth/2)
+					{
+						bullets.splice(x,1);
+						i--;
+						length--;
+						console.log("wallcoords")
+						continue;
+					}
+				}
+
+				for(y=0;y<otherTanks.length;y++)
+				{
+					if(distance(otherTanks[y][0],otherTanks[y][1],bullet.x,bullet.y) < (tankImg.width*tankscale*0.5))
+					{
+						bullets.splice(i,1);
+						i--;
+						length--;
+						console.log("ott")
+						continue;
+					}
+				}
+			}
+			console.log(i);
+
+			ctx.beginPath();
+			ctx.fillStyle = "black";
+			ctx.arc(bullet.x,bullet.y,bulletsize,0,2*Math.PI);
+  			ctx.fill();
+			ctx.stroke();
+			console.log(i);
+
+			socket.emit("bullet", [bullet.x,bullet.y]);
+			console.log(i);
+			console.log("emitted i= " + i);
+
+		}
+	}
+
 
 //  ************************** END OF KEYBOARD INPUT ****************************************************
 
 	function draw()
 	{
 		clearTimeout(drawingTimer);
-
 
 		// //Resets the background canvas from what was drawn previously
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -436,86 +520,13 @@ socket.on("disconnect",function(data)
 			tank.angle = tank.angle + turnspeed;
 		}
 
+		// Has a callback to drawBullets in it
 		tank.animate();
 
-		// Local Bullet Drawing
-		for(i = 0; i<bullets.length;i++)
+
+		for(x=0;x<otherBullets.length;x++)
 		{
-			console.log("start" + i);
-			var bullet = bullets[i];
-			bullet.animate();
-
-			// ELSE IF IS REDUNDANT
-
-			if(bullet.x - (bulletsize/2) < 0)
-			{
-				bullets.splice(i,1);
-				i--;
-				continue;
-			}
-			else if(bullet.x + (bulletsize/2) > canvas.width)
-			{
-				bullets.splice(i,1);
-				i--;
-				continue;
-			}
-			else if(bullet.y - (bulletsize/2) < 0)
-			{
-				bullets.splice(i,1);
-				i--;
-				continue;
-			}
-			else if(bullet.y + (bulletsize/2) > canvas.height)
-			{
-				bullets.splice(i,1);
-				i--;
-				continue;
-			}
-			else
-			{
-				for(x=0;x<wallCoords.length;x++)
-				{
-					if(distance(bullet.x,bullet.y,wallCoords[x][0] + tileWidth/2, wallCoords[x][1] + tileHeight/2) < tileWidth/2)
-					{
-						bullets.splice(x,1);
-						i--;
-						continue;
-					}
-				}
-
-				for(i=0;i<otherTanks.length;i++)
-				{
-					if(distance(otherTanks[i][0],otherTanks[i][1],bullet.x,bullet.y) < (tankImg.width*tankscale*0.5))
-					{
-						bullets.splice(i,1);
-						i--;
-						continue;
-					}
-				}
-			}
-
-			ctx.beginPath();
-			ctx.fillStyle = "black";
-			ctx.arc(bullet.x,bullet.y,bulletsize,0,2*Math.PI);
-  			ctx.fill();
-			ctx.stroke();
-
-			socket.emit("bullet", [bullet.x,bullet.y]);
-			console.log("end" + i);
-		}
-
-		// for(i=0;i<bullets.length;i++)
-		// {
-			
-		// }
- 
-		// console.log("otherBullets: " + otherBullets);
-
-		// OVERFLOW NEVER HAPPENS BECAUSE SOCKETS IS BLOCKING
-
-		for(i=0;i<otherBullets.length;i++)
-		{
-			if(distance(tank.x,tank.y,otherBullets[i][0],otherBullets[i][1]) < (tankImg.width*tankscale*0.5))
+			if(distance(tank.x,tank.y,otherBullets[x][0],otherBullets[x][1]) < (tankImg.width*tankscale*0.5))
 			{
 				alert("THIS SHOULD NEVER EVER HAPPEN");
 				otherBullets.splice(i,1);
@@ -525,7 +536,7 @@ socket.on("disconnect",function(data)
 			{
 				ctx.beginPath();
 				ctx.fillStyle = "orange";
-				ctx.arc(otherBullets[i][0],otherBullets[i][1],bulletsize,0,2*Math.PI);
+				ctx.arc(otherBullets[x][0],otherBullets[x][1],bulletsize,0,2*Math.PI);
   				ctx.fill();
 				ctx.stroke();
 			}
@@ -533,20 +544,22 @@ socket.on("disconnect",function(data)
 
 		otherBullets.splice(0,otherBullets.length);
 
-		for(i=0;i<wallCoords.length;i++)
+		for(y=0;y<wallCoords.length;y++)
 		{
-			wallCollisions(wallCoords[i][0],wallCoords[i][1]);
+			wallCollisions(wallCoords[y][0],wallCoords[y][1]);
+			ctx.fillStyle = "red";
+			ctx.fillRect(wallCoords[y][0],wallCoords[y][1],tileWidth,tileHeight);
 		}
 
 		// DISPLAYING OTHER TANKS
 
-		for(i=0;i<otherTanks.length;i++)
+		for(z=0;z<otherTanks.length;z++)
 		{
 			// x,y,angle,health,nickname
-			var currentTank = otherTanks[i];
+			var currentTank = otherTanks[z];
 			ctx.translate(currentTank[0],currentTank[1]);
 			ctx.rotate(-currentTank[2]*Math.PI/180);
-			ctx.drawImage(tankImg,-((tankImg.width)*0.5)*tankscale,-((tankImg.height)*0.5)*tankscale,tankImg.width * tankscale, tankImg.height*tankscale);
+			ctx.drawImage(tankImg,-((tileWidth)*0.5),-((tileHeight)*0.5),tileWidth, tileHeight);
 			ctx.rotate(currentTank[2]*Math.PI/180);
 			ctx.translate(-currentTank[0],-currentTank[1]);
 
@@ -556,10 +569,7 @@ socket.on("disconnect",function(data)
 			ctx.fillText(currentTank[4],currentTank[0]-(tankImg.width),currentTank[1]-(tankImg.height*1.4));
 		}
 
-		// console.log(tankImg.width);
-		// console.log(tankImg.height);
-
-		drawingTimer = setTimeout(draw,50);
+		drawingTimer = setTimeout(draw,60);
 
 	}
 
