@@ -6,7 +6,9 @@ var socket = io();
 // Or use maze generation algorithum, and have people spawn at different corners or something like a ctf?
 
 /*
-WORKING ON NOW: Need to make hits by bullets happen only once with ordering of bullet check code
+ALSO, THIS SHOULD NEVER HAPPEN IS HAPPENING
+WORKING ON NOW: The lines of bullets yet again
+ - Eliminated the fact that it might be happening in the keybard input, each bullet only getting pushed once
 
 
 Braindump: Could easily just send in wrong health and make yourself invisible, way to get around is have everyone track everyone and then only change health if everyone agrees/majority 
@@ -31,21 +33,17 @@ Braindump: Could easily just send in wrong health and make yourself invisible, w
 */
 
 /*
-For the bullets
-Each client will calculate own bullet's outcome
-The outcome in terms of health or deletion will be sent to the server
-All the other bullets are simply displayed, but put through the collision method, to see if I am hit
-Everyone just checks if they get hit by otherBullets
-*/
-
-/*
 Sizing bugs:
  - Bullet speed is not constant with scale
  - Text sizing is not constant
  - X and y are not constant, ie you can go off the page
-
+ - Shots can go through people again, thats a problem
 */
 
+
+/*
+Need to make tankscale draw the tank as big as tilewidth and height
+*/
 
 $(document).ready(function() 
 {
@@ -73,7 +71,8 @@ $(document).ready(function()
 
 	var walls = [[2,6]];
 	var wallCoords = [];
-	var windowDimens = [30,30*canvas.height/canvas.width];
+	// Tile dimensions are constant across screens
+	var windowDimens = [30,14.5];
 
 	var bulletsize, bulletspeed;
 	var importSize = 40;
@@ -81,9 +80,6 @@ $(document).ready(function()
 	// Will hold x,y,angle,health,nickname, color
 	var otherTanks = [];
 	var otherBullets = [];
-
-	// This is to prevent weird edge cases in the bullet iding process
-	var idCount = 0;
 
 	var tileWidth;
 	var tileHeight;
@@ -105,7 +101,10 @@ $(document).ready(function()
 			// canvas.width/windowDimens[0] is gonna be the pixels per tile
 			// divding by tank width creates conversion factor, so tank is appropriately scaled to tile size
 			tankscale = (canvas.width/windowDimens[0])/tankImg.width;
+
+
 			console.log("tankscale: " + tankscale);
+			console.log("imgsize " + tankImg.width)
 
 			tileWidth = canvas.width/(windowDimens[0]);
 			tileHeight = canvas.height/(windowDimens[1]);
@@ -117,6 +116,8 @@ $(document).ready(function()
 			maxTankSpeed = tileWidth/5;
 			bulletspeed = maxTankSpeed * 2;
 			bulletsize = tileWidth/10;
+
+			console.log(tileWidth + " " +  tileHeight);
 
 			// This is basically just the initial load time, because setTimeout gets changed in draw
 			drawingTimer = setTimeout(draw,1);
@@ -177,15 +178,6 @@ socket.on("disconnect",function(data)
 
 // ************************** HELPER FUNCTIONS **************************************************************************
 
-	function printBullets()
-	{
-		for(i = 0; i<bullets.length;i++)
-		{
-			console.log(bullets[i]);
-		}
-		console.log("DONE");
-	}
-
 
 	function drawTiles()
 	{
@@ -221,27 +213,34 @@ socket.on("disconnect",function(data)
 		}
 	}
 
-	function pointRect(boxx,boxy)
+	function wallCollisions(boxx,boxy)
 	{
-		if(distance(tank.x,tank.y,boxx+tileWidth/2,boxy+tileHeight/2) < tankImg.width + tileWidth/2)
+		
+		if( (tank.y > boxy - (tileHeight/2) && tank.y < boxy + tileHeight + (tileHeight/2)) &&
+			(tank.x + (tileWidth/2) > boxx && tank.x < boxx + tileWidth + (tileWidth/2)))
 		{
+			// ctx.beginPath();
+			// ctx.fillStyle = "orange";
+			// ctx.arc(boxx+(tileWidth/2),boxy+(tileHeight/2),(tileWidth/2),0,2*Math.PI);
+  	// 		ctx.fill();
+			// ctx.stroke();
 
-			if(tank.x + tankImg.width <= boxx + tileWidth/2)
+
+			if(tank.x + (tileWidth/2) > boxx && tank.x + (tileWidth/2) < boxx + (tileWidth/2))
 			{
-				tank.x = boxx - tankImg.width;
+				tank.x = boxx - tileWidth/2;
 			}
-			else if(tank.x - tankImg.width > boxx + tileWidth/2)
+			else if(tank.x - (tileWidth/2) > boxx + (tileWidth/2))
 			{
-				tank.x = boxx + tileWidth + tankImg.width;
+				tank.x = boxx + tileWidth + (tileWidth/2);
 			}
-			// Tank is on top
-			else if(tank.y - tankImg.width < boxy + tileWidth/2)
+			else if(tank.y + (tileHeight/2) < boxy + (tileHeight/2))
 			{
-				tank.y = boxy - tankImg.width;
+				tank.y = boxy - tileHeight/2;
 			}
-			else if(tank.y + tankImg.width >= boxy + tileWidth/2)
+			else if(tank.y + (tileHeight/2) > boxy + (tileWidth/2))
 			{
-				tank.y = boxy + tileWidth + tankImg.width;
+				tank.y = boxy + tileHeight + (tileHeight/2);
 			}
 		}
 	}
@@ -255,31 +254,15 @@ socket.on("disconnect",function(data)
 
 //  ************************** BULLET CLASS ******************************************************* 
 
-	function findBullet(currentValue)
+	var bullet = function()
 	{
-		// this is inputted in calling findIndex
-		if(this == currentValue.id)
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-
-	var bullet = function(id)
-	{
-		this.id = id;
 		this.angle = tank.angle;
 		this.xspeed = -bulletspeed*Math.sin((this.angle*Math.PI)/180);
 		this.yspeed = -bulletspeed*Math.cos((this.angle*Math.PI)/180);
+		// This math puts the bullet in front of the turret
 		this.x = tank.x - (Math.sin((this.angle*Math.PI)/180) * tankImg.width) - (this.xspeed*0.65);
 		this.y = tank.y - (Math.cos((this.angle*Math.PI)/180) * tankImg.height) - (this.yspeed*0.65);
 
-		// POTENTIUAL WAY TO MAKE THIS CLEANER IS BY WRITING MORE FUNCTIONS TO BE CALLED BY FIND INDEX THEN DELETING THE INDEX
-		// GETS RID OF THE LARGE FUNCTION AND SORTA SPLITS STUFF UP NICLEY
 		this.animate = function()
 		{
 			this.x = this.x + this.xspeed;
@@ -332,7 +315,8 @@ socket.on("disconnect",function(data)
 			ctx.translate(this.x,this.y);
 			ctx.rotate(-this.angle*Math.PI/180);
 			// This 0.5 is in here because the middle of the tank is 0,0
-			ctx.drawImage(tankImg,-((tankImg.width)*0.5)*tankscale,-((tankImg.height)*0.5)*tankscale,tankImg.width * tankscale, tankImg.height*tankscale);
+			// ctx.drawImage(tankImg,-((tankImg.width)*0.5)*tankscale,-((tankImg.height)*0.5)*tankscale,tankImg.width * tankscale, tankImg.height*tankscale);
+			ctx.drawImage(tankImg,-((tileWidth)*0.5),-((tileHeight)*0.5),tileWidth, tileHeight);
 			ctx.rotate(this.angle*Math.PI/180);
 			ctx.translate(-this.x,-this.y);
 
@@ -346,7 +330,7 @@ socket.on("disconnect",function(data)
 			// Drawing nickname
 			ctx.fillStyle = "white";
 			ctx.font = (tankscale*5) + "px Arial";
-			ctx.fillText(nickname + " " + tank.health,this.x-(tankImg.width),this.y-(tankImg.height*1.4));
+			ctx.fillText(nickname + " " + tank.health,this.x-(tileWidth/2),this.y-((tileHeight*2)/3));
 
 			// Health bar
 			// ctx.fillStyle = "green";
@@ -373,8 +357,7 @@ socket.on("disconnect",function(data)
 		//Space Bar
   		if(keyCode == 32 && reloaded)
   		{
-  			idCount++;
-  			bullets.push(new bullet(idCount));
+  			bullets.push(new bullet());
   			reloaded = false;
   		}
 
@@ -431,7 +414,6 @@ socket.on("disconnect",function(data)
 
 	function draw()
 	{
-
 		clearTimeout(drawingTimer);
 
 
@@ -456,82 +438,104 @@ socket.on("disconnect",function(data)
 
 		tank.animate();
 
+		// Local Bullet Drawing
 		for(i = 0; i<bullets.length;i++)
 		{
-			var x = bullets[i];
-			x.animate();
-			ctx.beginPath();
-			ctx.fillStyle = "black";
-			ctx.arc(x.x,x.y,bulletsize,0,2*Math.PI);
-  			ctx.fill();
-			ctx.stroke();
-		}
-
-		for(i=0;i<bullets.length;i++)
-		{
+			console.log("start" + i);
 			var bullet = bullets[i];
+			bullet.animate();
+
+			// ELSE IF IS REDUNDANT
 
 			if(bullet.x - (bulletsize/2) < 0)
 			{
 				bullets.splice(i,1);
 				i--;
+				continue;
 			}
-			if(bullet.x + (bulletsize/2) > canvas.width)
+			else if(bullet.x + (bulletsize/2) > canvas.width)
 			{
 				bullets.splice(i,1);
 				i--;
+				continue;
 			}
-			if(bullet.y - (bulletsize/2) < 0)
+			else if(bullet.y - (bulletsize/2) < 0)
 			{
 				bullets.splice(i,1);
 				i--;
+				continue;
 			}
-			if(bullet.y + (bulletsize/2) > canvas.height)
+			else if(bullet.y + (bulletsize/2) > canvas.height)
 			{
 				bullets.splice(i,1);
 				i--;
+				continue;
 			}
-
-			for(x=0;x<wallCoords.length;x++)
+			else
 			{
-				if(distance(bullet.x,bullet.y,wallCoords[x][0] + tileWidth/2, wallCoords[x][1] + tileHeight/2) < tileWidth/2)
+				for(x=0;x<wallCoords.length;x++)
 				{
-					bullets.splice(x,1);
+					if(distance(bullet.x,bullet.y,wallCoords[x][0] + tileWidth/2, wallCoords[x][1] + tileHeight/2) < tileWidth/2)
+					{
+						bullets.splice(x,1);
+						i--;
+						continue;
+					}
+				}
+
+				for(i=0;i<otherTanks.length;i++)
+				{
+					if(distance(otherTanks[i][0],otherTanks[i][1],bullet.x,bullet.y) < (tankImg.width*tankscale*0.5))
+					{
+						bullets.splice(i,1);
+						i--;
+						continue;
+					}
 				}
 			}
-		}
 
-		for(i=0;i<bullets.length;i++)
-		{
-			socket.emit("bullet", [bullets[i].x,bullets[i].y]);
-		}
-
-		console.log("otherBullets: " + otherBullets);
-
-		for(i=0;i<otherBullets.length;i++)
-		{
 			ctx.beginPath();
-			ctx.fillStyle = "orange";
-			ctx.arc(otherBullets[i][0],otherBullets[i][1],bulletsize,0,2*Math.PI);
+			ctx.fillStyle = "black";
+			ctx.arc(bullet.x,bullet.y,bulletsize,0,2*Math.PI);
   			ctx.fill();
 			ctx.stroke();
+
+			socket.emit("bullet", [bullet.x,bullet.y]);
+			console.log("end" + i);
 		}
+
+		// for(i=0;i<bullets.length;i++)
+		// {
+			
+		// }
+ 
+		// console.log("otherBullets: " + otherBullets);
+
+		// OVERFLOW NEVER HAPPENS BECAUSE SOCKETS IS BLOCKING
 
 		for(i=0;i<otherBullets.length;i++)
 		{
 			if(distance(tank.x,tank.y,otherBullets[i][0],otherBullets[i][1]) < (tankImg.width*tankscale*0.5))
 			{
-				console.log(otherBullets.splice(i,1));
+				alert("THIS SHOULD NEVER EVER HAPPEN");
+				otherBullets.splice(i,1);
 				tank.health--;
+			}
+			else
+			{
+				ctx.beginPath();
+				ctx.fillStyle = "orange";
+				ctx.arc(otherBullets[i][0],otherBullets[i][1],bulletsize,0,2*Math.PI);
+  				ctx.fill();
+				ctx.stroke();
 			}
 		}
 
 		otherBullets.splice(0,otherBullets.length);
 
-
 		for(i=0;i<wallCoords.length;i++)
 		{
-			pointRect(wallCoords[i][0],wallCoords[i][1]);
+			wallCollisions(wallCoords[i][0],wallCoords[i][1]);
 		}
 
 		// DISPLAYING OTHER TANKS
