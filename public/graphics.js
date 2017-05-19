@@ -1,7 +1,49 @@
 
 var socket = io();
 
+// Stretch idea: Have agario style and follow tank around,
+// Would need to translate, could be a pretty cool idea
+// Or use maze generation algorithum, and have people spawn at different corners or something like a ctf?
 
+/*
+ALSO, THIS SHOULD NEVER HAPPEN IS HAPPENING
+WORKING ON NOW: The lines of bullets yet again
+ - Eliminated the fact that it might be happening in the keybard input, each bullet only getting pushed once
+
+
+Braindump: Could easily just send in wrong health and make yourself invisible, way to get around is have everyone track everyone and then only change health if everyone agrees/majority 
+*/
+
+/*KNOWN BUGS:
+ - Text scaling doesnt actually work, x and y are not relative, need to make relative with personalized constant like tile width?
+ - Can get rid of bullet ids, no longer needed since parsed in order
+ - Bullets don't dissapear immediatly upon block contact, thats an order issue, where checks if in block after draws
+ - HTML Local Storage to store the nickname
+ - Bullets appear to duplicate with slow processing speed
+
+ STILL NEED TO IMPLIMENT:
+ - Color system?? Might be to complex for now, could just highlight own tank
+ - Bullet sharing
+ - Health system
+ - Death system
+ - Spawning in a different spot
+ - Leaderboard
+ - Survival of the fittest setup
+ - Clean up a lot of this code / put in seperate files
+*/
+
+/*
+Sizing bugs:
+ - Bullet speed is not constant with scale
+ - Text sizing is not constant
+ - X and y are not constant, ie you can go off the page
+ - Shots can go through people again, thats a problem
+*/
+
+
+/*
+Need to make tankscale draw the tank as big as tilewidth and height
+*/
 
 $(document).ready(function() 
 {
