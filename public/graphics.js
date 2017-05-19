@@ -547,7 +547,7 @@ socket.on("disconnect",function(data)
 
 		if(tank.health <= 0)
 		{
-			socket.emit("disconnect");
+			socket.emit("disconnect",[]);
 			socket.disconnect();
 			// socket.close();
 
