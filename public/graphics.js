@@ -150,6 +150,22 @@ socket.on("disconnect",function(data)
 	}
 });
 
+socket.on("ILEFT",function(data)
+{
+	// This is to get rid of sockets auto generated /#
+	data = data.substring(2);
+
+	for(i = 0;i<otherTanks.length;i++)
+	{
+		if(otherTanks[i][5] == data)
+		{
+			alert("deleted");
+			otherTanks.splice(i,1);
+		}
+	}
+});
+
+
 // **************************************** NETWORKING FUNCTIONS **************************************************************************
 	socket.on("tank",function(data)
 	{
@@ -547,6 +563,7 @@ socket.on("disconnect",function(data)
 
 		if(tank.health <= 0)
 		{
+			socket.emit("ILEFT",[0]);
 			socket.disconnect();
 
 			// End Screen
