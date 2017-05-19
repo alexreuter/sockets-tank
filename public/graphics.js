@@ -137,7 +137,6 @@ window.onbeforeunload = function(){
 
 socket.on("disconnect",function(data)
 {
-	alert("deleted");
 	// This is to get rid of sockets auto generated /#
 	data = data.substring(2);
 
@@ -145,6 +144,7 @@ socket.on("disconnect",function(data)
 	{
 		if(otherTanks[i][5] == data)
 		{
+			alert("deleted");
 			otherTanks.splice(i,1);
 		}
 	}
@@ -547,8 +547,9 @@ socket.on("disconnect",function(data)
 
 		if(tank.health <= 0)
 		{
-			// socket.disconnect();
-			socket.close();
+			socket.emit(disconnect);
+			socket.disconnect();
+			// socket.close();
 
 			// End Screen
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
