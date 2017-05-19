@@ -541,7 +541,7 @@ socket.on("disconnect",function(data)
 			ctx.fillRect(currentTank[0]-(tileWidth*0.4),currentTank[1]-(tileHeight*1.2),((tankscale*15)/10)*currentTank[3],tankscale*2.5);
 		}
 
-		if(tank.health == 0)
+		if(tank.health <= 0)
 		{
 			socket.close();
 
