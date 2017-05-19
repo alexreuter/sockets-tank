@@ -547,9 +547,7 @@ socket.on("disconnect",function(data)
 
 		if(tank.health <= 0)
 		{
-			socket.emit("disconnect",[]);
 			socket.disconnect();
-			// socket.close();
 
 			// End Screen
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
