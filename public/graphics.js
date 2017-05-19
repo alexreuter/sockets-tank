@@ -69,10 +69,7 @@ $(document).ready(function()
 
 	var bullets = [];
 
-	var walls = [
-	[2,3],[2,4],[2,5],[3,3],[4,3],[5,3],[9,26],[10,26],[11,26],[12,24],[12,25],[12,26]
-	
-	];
+	var walls = [[2,3],[2,4],[2,5],[3,3],[4,3],[5,3],[9,26],[10,26],[11,26],[12,24],[12,25],[12,26]];
 	var wallCoords = [];
 	// Tile dimensions are constant across screens
 	var windowDimens = [30,14.5];
@@ -93,8 +90,6 @@ $(document).ready(function()
 	var rightDown = false;
 	var leftDown = false;
 	var reloaded = true;
-
-
 	var drawingTimer;
 
 	// This weird callback inside callback makes sure the images are loaded before the game starts
@@ -144,6 +139,7 @@ socket.on("disconnect",function(data)
 	{
 		if(otherTanks[i][5] == data)
 		{
+			alert("deleted");
 			otherTanks.splice(i,1);
 		}
 	}
@@ -545,7 +541,7 @@ socket.on("disconnect",function(data)
 			ctx.fillRect(currentTank[0]-(tileWidth*0.4),currentTank[1]-(tileHeight*1.2),((tankscale*15)/10)*currentTank[3],tankscale*2.5);
 		}
 
-		if(tank.health <= 0)
+		if(tank.health == 0)
 		{
 			socket.close();
 
