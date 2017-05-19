@@ -1,49 +1,7 @@
 
 var socket = io();
 
-// Stretch idea: Have agario style and follow tank around,
-// Would need to translate, could be a pretty cool idea
-// Or use maze generation algorithum, and have people spawn at different corners or something like a ctf?
 
-/*
-ALSO, THIS SHOULD NEVER HAPPEN IS HAPPENING
-WORKING ON NOW: The lines of bullets yet again
- - Eliminated the fact that it might be happening in the keybard input, each bullet only getting pushed once
-
-
-Braindump: Could easily just send in wrong health and make yourself invisible, way to get around is have everyone track everyone and then only change health if everyone agrees/majority 
-*/
-
-/*KNOWN BUGS:
- - Text scaling doesnt actually work, x and y are not relative, need to make relative with personalized constant like tile width?
- - Can get rid of bullet ids, no longer needed since parsed in order
- - Bullets don't dissapear immediatly upon block contact, thats an order issue, where checks if in block after draws
- - HTML Local Storage to store the nickname
- - Bullets appear to duplicate with slow processing speed
-
- STILL NEED TO IMPLIMENT:
- - Color system?? Might be to complex for now, could just highlight own tank
- - Bullet sharing
- - Health system
- - Death system
- - Spawning in a different spot
- - Leaderboard
- - Survival of the fittest setup
- - Clean up a lot of this code / put in seperate files
-*/
-
-/*
-Sizing bugs:
- - Bullet speed is not constant with scale
- - Text sizing is not constant
- - X and y are not constant, ie you can go off the page
- - Shots can go through people again, thats a problem
-*/
-
-
-/*
-Need to make tankscale draw the tank as big as tilewidth and height
-*/
 
 $(document).ready(function() 
 {
@@ -69,7 +27,10 @@ $(document).ready(function()
 
 	var bullets = [];
 
-	var walls = [[2,6]];
+	var walls = [
+	[2,3],[2,4],[2,5],[3,3],[4,3],[5,3],[9,26],[10,26],[11,26],[12,24],[12,25],[12,26]
+	
+	];
 	var wallCoords = [];
 	// Tile dimensions are constant across screens
 	var windowDimens = [30,14.5];
@@ -77,7 +38,7 @@ $(document).ready(function()
 	var bulletsize, bulletspeed;
 	var importSize = 40;
 
-	// Will hold x,y,angle,health,nickname, color
+	// Will hold x,y,angle,health,nickname, colors
 	var otherTanks = [];
 	var otherBullets = [];
 
@@ -134,7 +95,6 @@ window.onbeforeunload = function(){
 
 socket.on("disconnect",function(data)
 {
-	console.log(data.substring(2));
 
 	// This is to get rid of sockets auto generated /#
 	data = data.substring(2);
@@ -165,7 +125,7 @@ socket.on("disconnect",function(data)
 
 		if(!found)
 		{
-			console.log("Someone new has joined");
+			console.log("Someone new joined");
 			otherTanks.push(data);
 		}
 
@@ -219,13 +179,6 @@ socket.on("disconnect",function(data)
 		if( (tank.y > boxy - (tileHeight/2) && tank.y < boxy + tileHeight + (tileHeight/2)) &&
 			(tank.x + (tileWidth/2) > boxx && tank.x < boxx + tileWidth + (tileWidth/2)))
 		{
-			// ctx.beginPath();
-			// ctx.fillStyle = "orange";
-			// ctx.arc(boxx+(tileWidth/2),boxy+(tileHeight/2),(tileWidth/2),0,2*Math.PI);
-  			// ctx.fill();
-			// ctx.stroke();
-
-
 			if(tank.x + (tileWidth/2) > boxx && tank.x + (tileWidth/2) < boxx + (tileWidth/2))
 			{
 				tank.x = boxx - tileWidth/2;
@@ -320,21 +273,18 @@ socket.on("disconnect",function(data)
 			ctx.rotate(this.angle*Math.PI/180);
 			ctx.translate(-this.x,-this.y);
 
-			// HITBOX CIRCLE
-			ctx.beginPath();
-			ctx.fillStyle = "transparent";
-			ctx.arc(tank.x,tank.y,tankImg.width*tankscale*0.5,0,2*Math.PI);
-  			ctx.fill();
-			ctx.stroke();
-
 			// Drawing nickname
 			ctx.fillStyle = "white";
 			ctx.font = (tankscale*5) + "px Arial";
-			ctx.fillText(nickname + " " + tank.health,this.x-(tileWidth/2),this.y-((tileHeight*2)/3));
+			ctx.fillText(nickname,this.x-(tileWidth/2),this.y-((tileHeight*2)/3));
 
 			// Health bar
-			// ctx.fillStyle = "green";
-			// ctx.fillRect()
+			ctx.beginPath();
+			ctx.rect(this.x-(tileWidth*0.4),this.y-(tileHeight*1.2),tankscale*15,tankscale*2.5);
+			ctx.stroke();
+			ctx.fillStyle = "green";
+			ctx.fillRect(this.x-(tileWidth*0.4),this.y-(tileHeight*1.2),((tankscale*15)/10)*tank.health,tankscale*2.5);
+
 
 			// x,y,angle,health,nickname
 			var data = [this.x,this.y,this.angle,this.health,nickname, socket.io.engine.id];
@@ -411,57 +361,46 @@ socket.on("disconnect",function(data)
 	function drawBullets()
 	{
 		var length = bullets.length;
-		for(i = 0; i<length;i++)
+		for(i=0;i<length&&i>=0;i++)
 		{
-			console.log(i);
-			console.log(length);
-			console.log("******");
-			// console.log("start" + i);
 			var bullet = bullets[i];
 			bullet.animate();
-			console.log(i);
-
-			// ELSE IF IS REDUNDANT
 
 			if(bullet.x - (bulletsize/2) < 0)
 			{
 				bullets.splice(i,1);
 				i--;
 				length--;
-				console.log("tooleft");
 			}
 			else if(bullet.x + (bulletsize/2) > canvas.width)
 			{
 				bullets.splice(i,1);
 				i--;
 				length--;
-				console.log("tooright");
 			}
 			else if(bullet.y - (bulletsize/2) < 0)
 			{
 				bullets.splice(i,1);
 				i--;
 				length--;
-				console.log("toohigh");
 			}
 			else if(bullet.y + (bulletsize/2) > canvas.height)
 			{
 				bullets.splice(i,1);
 				i--;
 				length--;
-				console.log("toolow");
 			}
 			else
 			{
-				console.log(i);
 				for(x=0;x<wallCoords.length;x++)
 				{
-					if(distance(bullet.x,bullet.y,wallCoords[x][0] + tileWidth/2, wallCoords[x][1] + tileHeight/2) < tileWidth/2)
+					// if(distance(bullet.x,bullet.y,wallCoords[x][0] + tileWidth/2, wallCoords[x][1] + tileHeight/2) < tileWidth/2)
+					if((bullet.y + (bulletsize/2) > wallCoords[x][1] && bullet.y - (bulletsize/2) < wallCoords[x][1] + tileHeight &&
+						(bullet.x + (bulletsize/2) > wallCoords[x][0] && bullet.x - (bulletsize/2) < wallCoords[x][0] + tileWidth)))
 					{
-						bullets.splice(x,1);
+						bullets.splice(i,1);
 						i--;
 						length--;
-						console.log("wallcoords")
 						continue;
 					}
 				}
@@ -473,24 +412,18 @@ socket.on("disconnect",function(data)
 						bullets.splice(i,1);
 						i--;
 						length--;
-						console.log("ott")
 						continue;
 					}
 				}
 			}
-			console.log(i);
 
 			ctx.beginPath();
 			ctx.fillStyle = "black";
 			ctx.arc(bullet.x,bullet.y,bulletsize,0,2*Math.PI);
   			ctx.fill();
 			ctx.stroke();
-			console.log(i);
 
 			socket.emit("bullet", [bullet.x,bullet.y]);
-			console.log(i);
-			console.log("emitted i= " + i);
-
 		}
 	}
 
@@ -501,13 +434,10 @@ socket.on("disconnect",function(data)
 	{
 		clearTimeout(drawingTimer);
 
-		// //Resets the background canvas from what was drawn previously
+		//Resets the background canvas from what was drawn previously
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 		drawTiles();
-
-		ctx.fillStyle = "red";
-		ctx.fillRect(30,30,10,10);
 
 		// Drawing control
 		if(rightDown)
@@ -528,7 +458,6 @@ socket.on("disconnect",function(data)
 		{
 			if(distance(tank.x,tank.y,otherBullets[x][0],otherBullets[x][1]) < (tankImg.width*tankscale*0.5))
 			{
-				alert("THIS SHOULD NEVER EVER HAPPEN");
 				otherBullets.splice(i,1);
 				tank.health--;
 			}
@@ -547,8 +476,6 @@ socket.on("disconnect",function(data)
 		for(y=0;y<wallCoords.length;y++)
 		{
 			wallCollisions(wallCoords[y][0],wallCoords[y][1]);
-			ctx.fillStyle = "red";
-			ctx.fillRect(wallCoords[y][0],wallCoords[y][1],tileWidth,tileHeight);
 		}
 
 		// DISPLAYING OTHER TANKS
@@ -567,13 +494,30 @@ socket.on("disconnect",function(data)
 			ctx.fillStyle = "white";
 			ctx.font = (tankscale*5) + "px Arial";
 			ctx.fillText(currentTank[4],currentTank[0]-(tankImg.width),currentTank[1]-(tankImg.height*1.4));
+
+			// Health Bar
+			ctx.beginPath();
+			ctx.rect(currentTank[0]-(tileWidth*0.4),currentTank[1]-(tileHeight*1.2),tankscale*15,tankscale*2.5);
+			ctx.stroke();
+			ctx.fillStyle = "green";
+			ctx.fillRect(currentTank[0]-(tileWidth*0.4),currentTank[1]-(tileHeight*1.2),((tankscale*15)/10)*currentTank[3],tankscale*2.5);
 		}
 
-		drawingTimer = setTimeout(draw,60);
+		if(tank.health <= 0)
+		{
+			socket.disconnect();
+
+			// End Screen
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.fillStyle = "black";
+			ctx.font = (tankscale*20) + "px Arial";
+			ctx.fillText("Thanks for playing! You lost.",tileWidth,tileHeight*2);
+		}
+		else
+		{
+			drawingTimer = setTimeout(draw,60);
+		}
 
 	}
-
-	// drawTiles();
-
 
 });
